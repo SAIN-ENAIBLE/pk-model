@@ -32,5 +32,4 @@ uvx pre-commit install
 ```
 
 ## License
-
-MIT, see the `LICENSE` file.
+BSD-3.
