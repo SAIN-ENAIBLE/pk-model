@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "pk-model"
+authors = [
+  { name = "My Name", email = "me@email.com" },
+]
+description = "A great package."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
+]
+dynamic = ["version"]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/org/pk-model"
+"Bug Tracker" = "https://github.com/org/pk-model/issues"
+
+
+[dependency-groups]
+test = [
+  "pytest >=9",
+  "pytest-cov >=7",
+]
+dev = [
+  { include-group = "test" },
+  "ruff",
+]
+docs = [
+  "sphinx>=7.0",
+  "myst_parser>=0.13",
+  "sphinx_copybutton",
+  "sphinx_autodoc_typehints",
+  "furo>=2023.08.17",
+]
+
+
+[tool.hatch]
+version.path = "src/pk_model/__init__.py"
+
+
+[tool.pytest]
+minversion = "9.0"
+addopts = ["-ra", "--showlocals"]
+strict = true
+log_level = "INFO"
+testpaths = [
+  "tests",
+]
+
+
+[tool.coverage]
+run.source = ["pk_model"]
+report.exclude_also = [
+  '\.\.\.',
+  'if typing.TYPE_CHECKING:',
+]
+
+
+[tool.ruff.lint]
+extend-select = [
+  "B",      # flake8-bugbear
+  "I",      # isort
+  "NPY",    # NumPy specific rules
+  "SIM",    # flake8-simplify
+  "UP",     # pyupgrade
+]
