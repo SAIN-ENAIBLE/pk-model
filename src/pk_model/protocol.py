@@ -1,14 +1,28 @@
 #
 # Protocol class
 #
-
+from scipy.integrate import solve_ivp
 
 class IV:
-    def __init__(self, dose, compartment_dict):
-        self.dose = dose  # dose function
-        self.compartment_dict = compartment_dict  # dictionary of compartment parameters
-        self.central = compartment_dict['central']  # central compartment parameters
-        
+    def __init__(self, dose, central, compartments):
+        self.dose = dose
+        self.central = central
+        self.compartments = compartments
+        self.all_compartment_list = []
+        self.qp_list = [
+            values[f"q{i}"]
+            for i, values in enumerate(self.compartments.values(), start=1)
+        ]
+        self.vp_list = [
+            values[f"v{i}"]
+            for i, values in enumerate(self.compartments.values(), start=1)
+        ]
+
+        self.Qp_list = [
+            values[f"Q{i}"]
+            for i, values in enumerate(self.compartments.values(), start=1)
+        ]
+
 
     def compartment_eq(self, Qp, qc, vc, qp, vp):
         """
@@ -34,8 +48,49 @@ class IV:
         return: list of rates of change of drug quantities in each compartment (dqp/dt)
         """
         self.all_compartment_list = [self.compartment_eq(Qp, qc, vc, qp, vp) for Qp, qp, vp in zip(Qp_list, qp_list, vp_list)]
+        return self.all_compartment_list
 
     def central_eq(self, dose, qc, vc, cl):
         return dose - (qc / vc) * cl  - sum(self.all_compartment_list)
+
+    def system_eq(self, t, y):
+        """
+        Calculate the rate of change of drug quantity in the system.
+        t: time
+        y: list of drug quantities in each compartment (central and peripheral)
+        return: list of rates of change of drug quantities in each compartment (dqc/dt, dqp/dt)
+        """
+        qc = y[0] # the central compartment quantity
+        qp_list = y[1:]  # the peripheral compartment quantities
+
+        vc = self.central["vc"]
+        cl = self.central["cl"]
+
+        dqp_list = self.all_compartment_eq(
+                self.Qp_list, # the fixed inter-compartmental clearances
+                qc,
+                vc,
+                qp_list,  # the peripheral compartment quantities which get updated
+                self.vp_list  # the fixed compartment volumes
+            )
+        
+        dose = self.dose(t) if callable(self.dose) else self.dose
+
+        dqc = self.central_eq(dose, qc, vc, cl)
+
+        return [dqc] + dqp_list  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ...)
+
+    def solver(self, t_span,t_eval):
+        y0 = [self.central["qc"]] + self.qp_list
+
+        solution = solve_ivp(
+            fun=self.system_eq,
+            t_span=t_span,
+            y0=y0,
+            t_eval=t_eval
+        )
+
+        return solution
+
     
 
