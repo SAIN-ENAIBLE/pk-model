@@ -87,10 +87,12 @@ class IV:
             fun=self.system_eq,
             t_span=t_span,
             y0=y0,
-            t_eval=t_eval
+            t_eval=t_eval,
+            rtol=1e-9,
+            atol=1e-11,
         )
 
-        return solution
+        return solution.y
 
     
 
