@@ -5,12 +5,21 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 
-class IV:
-    def __init__(self, dose, central, compartments, t_span, t_eval=None):
+class Protocol:
+    def __init__(
+        self, dose, central, compartments, t_span, t_eval=None, type="IV", Ka=None
+    ):
+        """
+        Initialise the Protocol class.
+        """
         self.dose = dose
         self.central = central
         self.compartments = compartments
+        self.compartment_count = len(compartments)
         self.compartment_names = list(compartments.keys())
+        self.type = type.upper()
+        self.Ka = Ka
+
         self.all_compartment_list = []
         self.qp_list = [
             values[f"q{i}"]
@@ -68,8 +77,8 @@ class IV:
         ]
         return self.all_compartment_list
 
-    def central_eq(self, dose, qc, vc, cl):
-        return dose - (qc / vc) * cl - sum(self.all_compartment_list)
+    def central_eq(self, absorption, qc, vc, cl):
+        return absorption - (qc / vc) * cl - sum(self.all_compartment_list)
 
     def system_eq(self, t, y):
         """
@@ -79,7 +88,9 @@ class IV:
         return: list of rates of change of drug quantities in each compartment (dqc/dt, dqp/dt)
         """
         qc = y[0]  # the central compartment quantity
-        qp_list = y[1:]  # the peripheral compartment quantities
+        qp_list = y[
+            1 : 1 + self.compartment_count
+        ]  # the peripheral compartment quantities
 
         vc = self.central["vc"]
         cl = self.central["cl"]
@@ -91,17 +102,27 @@ class IV:
             qp_list,  # the peripheral compartment quantities which get updated
             self.vp_list,  # the fixed compartment volumes
         )
-
         dose = self.dose(t) if callable(self.dose) else self.dose
 
-        dqc = self.central_eq(dose, qc, vc, cl)
+        if self.type == "IV":
+            dqc = self.central_eq(dose, qc, vc, cl)
+            return (
+                [dqc] + dqp_list
+            )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ...)
 
+        q0 = y[-1]  # the absorption
+        dq0 = dose - self.Ka * q0
+        absorption = self.Ka * q0
+        dqc = self.central_eq(absorption, qc, vc, cl)
         return (
-            [dqc] + dqp_list
-        )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ...)
+            [dqc] + dqp_list + [dq0]
+        )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ..., dq0/dt)
 
     def solver(self, t_span, t_eval):
         y0 = [self.central["qc"]] + self.qp_list
+
+        if self.type != "IV":
+            y0.append(self.dose)
 
         solution = solve_ivp(
             fun=self.system_eq,
@@ -165,13 +186,13 @@ class Infusion:
             raise ValueError("Infusion rate must be a positive finite number.")
 
 
-@dataclass(frozen=True)
-class Protocol:
-    """Dosing protocol for a pharmacokinetic model.
+# @dataclass(frozen=True)
+# class Protocol:
+#     """Dosing protocol for a pharmacokinetic model.
 
-    ``boluses`` is a list of bolus doses, each with a time and amount.
-    ``infusions`` is a list of infusions, each with a start time, end time, and rate.
-    """
+#     ``boluses`` is a list of bolus doses, each with a time and amount.
+#     ``infusions`` is a list of infusions, each with a start time, end time, and rate.
+#     """
 
-    boluses: tuple[Bolus, ...] = ()
-    infusions: tuple[Infusion, ...] = ()
+#     boluses: tuple[Bolus, ...] = ()
+#     infusions: tuple[Infusion, ...] = ()
