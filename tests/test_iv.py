@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import expm
 
-from pk_model.protocol import IV
+from pk_model.protocol import Protocol
 
 
 def test_central_compartment_analytical_solution():
@@ -9,12 +9,14 @@ def test_central_compartment_analytical_solution():
     compartments = {}
 
     times = np.linspace(0, 10, 50)
-    model = IV(
+    model = Protocol(
         dose=0.0,
         central=central,
         compartments=compartments,
         t_span=(0, 10),
         t_eval=times,
+        type='IV',
+        Ka=None
     )
 
     times = np.linspace(0, 10, 50)
@@ -34,12 +36,14 @@ def test_two_compartment_constant_dose_analytical_solution():
 
     times = np.linspace(0, 20, 200)
 
-    model = IV(
+    model = Protocol(
         dose=dose,
         central=central,
         compartments=compartments,
         t_span=(0, 20),
         t_eval=times,
+        type='IV',
+        Ka=None
     )
 
     # Linear system: dy/dt = A @ y + b
