@@ -1,6 +1,8 @@
-from scipy.linalg import expm
 import numpy as np
+from scipy.linalg import expm
+
 from pk_model.protocol import IV
+
 
 def test_central_compartment_analytical_solution():
     central = {"qc": 100.0, "vc": 5.0, "cl": 1.0}

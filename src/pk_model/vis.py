@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 
-
 # expected input  [t, qc, qp1, qp2, qp3, qp4 ....]
 
 def plot_quantity(data, title=None, xlabel='Time (h)', ylabel='Quantity (ng)'):

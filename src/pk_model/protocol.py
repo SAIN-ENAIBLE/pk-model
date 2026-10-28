@@ -1,7 +1,9 @@
-import numpy as np
 from time import perf_counter
-from scipy.integrate import solve_ivp
+
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import solve_ivp
+
 
 class IV:
     def __init__(self, dose, central, compartments, t_span, t_eval=None):
@@ -62,7 +64,7 @@ class IV:
         vp_list: list of volumes for each compartment
         return: list of rates of change of drug quantities in each compartment (dqp/dt)
         """
-        self.all_compartment_list = [self.compartment_eq(Qp, qc, vc, qp, vp) for Qp, qp, vp in zip(Qp_list, qp_list, vp_list)]
+        self.all_compartment_list = [self.compartment_eq(Qp, qc, vc, qp, vp) for Qp, qp, vp in zip(Qp_list, qp_list, vp_list, strict=False)]
         return self.all_compartment_list
 
     def central_eq(self, dose, qc, vc, cl):
