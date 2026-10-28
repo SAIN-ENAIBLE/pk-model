@@ -1,9 +1,9 @@
 import numpy as np
-from pk_model.model import Model
 from scipy.linalg import expm
 
 from pk_model import clear, dose, regime
 from pk_model.compartments import Comp, Peripheral
+from pk_model.model import Model
 from pk_model.protocol import Protocol
 
 
@@ -24,10 +24,12 @@ def test_iv_central_compartment_analytical_solution():
                comp = comp,
                clear = linear_clearance)
     
-    times = np.linspace(0, 10, 50)
-    expected = 100.0 * np.exp(-times / 5.0)
     
     result = iv.solve(t_end=48)
+    k, R, T = 20 / 15, 15, 30  # k = CL / V, infusion rate, infusion end
+    t = result.t
+    q_T = (R / k) * (1 - np.exp(-k * T))
+    expected = np.where(t < T, (R / k) * (1 - np.exp(-k * t)), q_T * np.exp(-k * (t - T)))
     assert np.allclose(result.y[0], expected, rtol=1e-5, atol=1e-8)
     
     
