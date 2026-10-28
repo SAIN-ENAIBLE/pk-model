@@ -1,5 +1,86 @@
 # For testing model.py in isolation (without route of administration specified)
 
+# Imports
+
+import numpy as np
+import pytest
+
+from pk_model.model import CentralParams, Model, PeripheralParams
+
+###
+### Input validation
+###
+
+# 1 - for peripheral parameters
+
+def test_valid_peripheral_params():
+    """Valid peripheral parameters should be stored correctly."""
+    
+    peripheral = PeripheralParams(
+        volume = 10.0,
+        flow = 2.0,
+    )
+
+    assert peripheral.volume == 10.0
+    assert peripheral.flow == 2.0
+
+
+@pytest.mark.parametrize("volume", [0.0, -1.0, np.inf, -np.inf, np.nan])
+def test_invalid_peripheral_volume_raises_value_error(volume):
+    """Peripheral volume must be positive and finite."""
+    
+    with pytest.raises(ValueError):
+        PeripheralParams(
+            volume = volume,
+            flow = 2.0,
+        )
+
+
+@pytest.mark.parametrize("flow", [0.0, -1.0, np.inf, -np.inf, np.nan])
+def test_invalid_peripheral_flow_raises_value_error(flow):
+    """Peripheral flow must be positive and finite."""
+    
+    with pytest.raises(ValueError):
+        PeripheralParams(
+            volume = 10.0,
+            flow = flow,
+        )
+
+# 2 - for central parameters 
+
+def test_valid_central_params():
+    """Valid central parameters should be stored correctly."""
+    
+    params = CentralParams(
+        central_volume = 5.0,
+        clearance = 1.0,
+    )
+
+    assert params.central_volume == 5.0
+    assert params.clearance == 1.0
+    assert params.peripherals == ()
+
+
+@pytest.mark.parametrize("central_volume", [0.0, -1.0, np.inf, -np.inf, np.nan])
+def test_invalid_central_volume_raises_value_error(central_volume):
+    """Central volume must be positive and finite."""
+    
+    with pytest.raises(ValueError):
+        CentralParams(
+            central_volume = central_volume,
+            clearance = 1.0,
+        )
+
+
+@pytest.mark.parametrize("clearance", [0.0, -1.0, np.inf, -np.inf, np.nan])
+def test_invalid_clearance_raises_value_error(clearance):
+    """Central clearance must be positive and finite."""
+
+    with pytest.raises(ValueError):
+        CentralParams(
+            central_volume = 5.0,
+            clearance = clearance,
+        )
 
 
 ###
