@@ -40,6 +40,7 @@ test = [
 ]
 dev = [
   { include-group = "test" },
+  "pre-commit>=4.7.0",
   "ruff",
 ]
 docs = [
@@ -81,6 +82,3 @@ extend-select = [
   "SIM",    # flake8-simplify
   "UP",     # pyupgrade
 ]
-
-[project.scripts]
-pk-model = "pk_model.cli:main"
