@@ -21,7 +21,12 @@ classifiers = [
   "Typing :: Typed",
 ]
 dynamic = ["version"]
-dependencies = []
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.4.6",
+    "plotly>=7.1.0",
+    "scipy>=1.17.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/org/pk-model"
@@ -50,7 +55,7 @@ docs = [
 version.path = "src/pk_model/__init__.py"
 
 
-[tool.pytest]
+[tool.pytest.ini_options]
 minversion = "9.0"
 addopts = ["-ra", "--showlocals"]
 strict = true
@@ -76,3 +81,6 @@ extend-select = [
   "SIM",    # flake8-simplify
   "UP",     # pyupgrade
 ]
+
+[project.scripts]
+pk-model = "pk_model.cli:main"
