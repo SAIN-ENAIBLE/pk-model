@@ -6,7 +6,9 @@ from scipy.integrate import solve_ivp
 
 
 class Protocol:
-    def __init__(self, dose, central, compartments, t_span, t_eval=None, type='IV', Ka=None):
+    def __init__(
+        self, dose, central, compartments, t_span, t_eval=None, type="IV", Ka=None
+    ):
         """
         Initialise the Protocol class.
         """
@@ -78,7 +80,6 @@ class Protocol:
     def central_eq(self, absorption, qc, vc, cl):
         return absorption - (qc / vc) * cl - sum(self.all_compartment_list)
 
-
     def system_eq(self, t, y):
         """
         Calculate the rate of change of drug quantity in the system.
@@ -87,7 +88,9 @@ class Protocol:
         return: list of rates of change of drug quantities in each compartment (dqc/dt, dqp/dt)
         """
         qc = y[0]  # the central compartment quantity
-        qp_list = y[1 : 1 + self.compartment_count]  # the peripheral compartment quantities
+        qp_list = y[
+            1 : 1 + self.compartment_count
+        ]  # the peripheral compartment quantities
 
         vc = self.central["vc"]
         cl = self.central["cl"]
@@ -103,13 +106,17 @@ class Protocol:
 
         if self.type == "IV":
             dqc = self.central_eq(dose, qc, vc, cl)
-            return ([dqc] + dqp_list)  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ...)
+            return (
+                [dqc] + dqp_list
+            )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ...)
 
-        q0 = y[-1] # the absorption
+        q0 = y[-1]  # the absorption
         dq0 = dose - self.Ka * q0
         absorption = self.Ka * q0
         dqc = self.central_eq(absorption, qc, vc, cl)
-        return ([dqc] + dqp_list + [dq0])  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ..., dq0/dt)
+        return (
+            [dqc] + dqp_list + [dq0]
+        )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ..., dq0/dt)
 
     def solver(self, t_span, t_eval):
         y0 = [self.central["qc"]] + self.qp_list
