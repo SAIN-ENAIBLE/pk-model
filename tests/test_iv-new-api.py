@@ -1,32 +1,28 @@
 import numpy as np
+from pk_model.model import Model
 from scipy.linalg import expm
 
-from pk_model import dose
-from pk_model import clear
-from pk_model import regime
-from pk_model.model import Model
-from pk_model.protocol import Protocol
+from pk_model import clear, dose, regime
 from pk_model.compartments import Comp, Peripheral
+from pk_model.protocol import Protocol
 
 
 def test_iv_central_compartment_analytical_solution():
     
     peripherals = ()
-    
     comp = Comp(central_volume=15,
                     peripherals=peripherals)
     
-    regime = regime.IV()
+    intravenous_regime = regime.IV()
+    infusion_dose = dose.infusion(start = 0,
+                                  end = 30,
+                                  rate = 15)
+    linear_clearance = clear.linear(cl = 20)
     
-    dose = dose.infusion(start = 0,
-                         end = 30,
-                         rate = 15)
-    clear = clear.linear(rate = 20)
-    
-    iv = Model(dose = dose,
-               regime = regime,
+    iv = Model(dose = infusion_dose,
+               regime = intravenous_regime,
                comp = comp,
-               clear = clear)
+               clear = linear_clearance)
     
     times = np.linspace(0, 10, 50)
     expected = 100.0 * np.exp(-times / 5.0)
