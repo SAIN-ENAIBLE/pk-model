@@ -55,7 +55,7 @@ docs = [
 version.path = "src/pk_model/__init__.py"
 
 
-[tool.pytest]
+[tool.pytest.ini_options]
 minversion = "9.0"
 addopts = ["-ra", "--showlocals"]
 strict = true
