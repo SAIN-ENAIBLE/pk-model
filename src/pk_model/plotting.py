@@ -1,4 +1,24 @@
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+
+
+def plot(solution):
+    """Plot drug quantity against time for each compartment."""
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    for i, label in enumerate(solution.y):
+        label_name = "Central" if i == 0 else f"Peripheral {i}"
+        ax.plot(solution.t, label, label=label_name)
+
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Drug quantity (ng)")
+    ax.set_title("Drug quantity over time")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    fig.tight_layout()
+    return fig, ax
 
 
 def plot_solution(sol):
