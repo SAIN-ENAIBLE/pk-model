@@ -1,8 +1,8 @@
 from time import perf_counter
 
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.integrate import solve_ivp
+
+from .solve import solve_protocol
 
 """mg for the dose, ng for the amount, hours for time, L for volume, L/h for clearance and flow."""
 
@@ -41,7 +41,7 @@ class Protocol:
             t_eval = np.linspace(t_span[0], t_span[1], 200)
 
         start_time = perf_counter()
-        self.solution = self.solver(t_span, t_eval)
+        self.solution = solve_protocol(self, t_span, t_eval)
         self.solve_time = perf_counter() - start_time
 
         if not self.solution.success:
@@ -119,38 +119,3 @@ class Protocol:
         return (
             [dqc] + dqp_list + [dq0]
         )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ..., dq0/dt)
-
-    def solver(self, t_span, t_eval):
-        y0 = [self.central["qc"]] + self.qp_list
-
-        if self.type != "IV":
-            y0.append(self.dose)
-
-        solution = solve_ivp(
-            fun=self.system_eq,
-            t_span=t_span,
-            y0=y0,
-            t_eval=t_eval,
-            rtol=1e-9,
-            atol=1e-11,
-        )
-
-        return solution
-
-    def plot(self):
-        """Plot drug quantity against time for each compartment."""
-        labels = ["Central"] + self.compartment_names
-
-        fig, ax = plt.subplots(figsize=(9, 5))
-
-        for i, label in enumerate(labels):
-            ax.plot(self.t, self.y[i], label=label)
-
-        ax.set_xlabel("Time")
-        ax.set_ylabel("Drug quantity")
-        ax.set_title("Drug quantity over time")
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-
-        fig.tight_layout()
-        return fig, ax
