@@ -82,6 +82,3 @@ extend-select = [
   "SIM",    # flake8-simplify
   "UP",     # pyupgrade
 ]
-
-[project.scripts]
-pk-model = "pk_model.cli:main"
