@@ -7,7 +7,7 @@ from scipy.integrate import solve_ivp
 """mg for the dose, ng for the amount, hours for time, L for volume, L/h for clearance and flow."""
 
 
-class Protocol:
+class Protocol: #TODO(1): God-class.
     def __init__(
         self, dose, central, compartments, t_span, t_eval=None, type="IV", Ka=None
     ):
