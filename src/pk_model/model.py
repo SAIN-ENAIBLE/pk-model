@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from math import isfinite
-from .compartments import CentralParams
+from .compartments import Comp
 
 class Model:
     """Linear compartment model with elimination from the central compartment.
@@ -12,8 +12,8 @@ class Model:
     Amounts, volumes, clearances, and time must use consistent units.
     """
 
-    def __init__(self, params: CentralParams) -> None:
-        if not isinstance(params, CentralParams):
+    def __init__(self, params: Comp) -> None:
+        if not isinstance(params, Comp):
             raise TypeError("params must be a CentralParams instance.")
         self.params = params
 
@@ -58,7 +58,7 @@ class Model:
 
         for peripheral, amount in zip(p.peripherals, y[1:], strict=True):
             concentration = amount / peripheral.volume
-            exchange = peripheral.flow * (central_concentration - concentration)
+            exchange = peripheral.transition_rate * (central_concentration - concentration)
             central_rate -= exchange
             peripheral_rates.append(exchange)
 
