@@ -3,11 +3,8 @@ from time import perf_counter
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
-from dataclasses import dataclass
 
 """mg for the dose, ng for the amount, hours for time, L for volume, L/h for clearance and flow."""
-
-
 
 
 class IV:
