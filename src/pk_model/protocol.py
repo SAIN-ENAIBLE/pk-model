@@ -131,8 +131,6 @@ class IV:
 
 from dataclasses import dataclass
 
-import numpy as np
-
 """mg for the dose, ng for the amount, hours for time, L for volume, L/h for clearance and flow."""
 
 
