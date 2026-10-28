@@ -40,6 +40,7 @@ test = [
 ]
 dev = [
   { include-group = "test" },
+  "pre-commit>=4.7.0",
   "ruff",
 ]
 docs = [
