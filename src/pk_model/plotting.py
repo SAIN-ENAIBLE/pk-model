@@ -1,5 +1,6 @@
-import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
 
 def plot(solution):
         """Plot drug quantity against time for each compartment."""
