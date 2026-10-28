@@ -8,7 +8,7 @@ from scipy.integrate import solve_ivp
 class Protocol:
     def __init__(self, dose, central, compartments, t_span, t_eval=None, type='IV', Ka=None):
         """
-        Initialize the IV class.
+        Initialise the Protocol class.
         """
         self.dose = dose
         self.central = central
