@@ -22,12 +22,11 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-  "numpy",
-  "scipy",
+    "matplotlib>=3.11.2",
+    "numpy>=2.4.6",
+    "plotly>=7.1.0",
+    "scipy>=1.17.1",
 ]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/pk_model"]
 
 [project.urls]
 Homepage = "https://github.com/org/pk-model"
@@ -82,3 +81,6 @@ extend-select = [
   "SIM",    # flake8-simplify
   "UP",     # pyupgrade
 ]
+
+[project.scripts]
+pk-model = "pk_model.cli:main"
