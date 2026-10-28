@@ -8,6 +8,7 @@ from pk_model.protocol import Protocol
 
 # Construct a standard two-compartment IV protocol reused across tests
 
+
 def make_iv_protocol():
     """Construct a simple two-compartment IV protocol for testing."""
     return Protocol(
@@ -28,7 +29,9 @@ def make_iv_protocol():
         type="IV",
     )
 
+
 # Check that user inputs are stored and administration type is normalised
+
 
 def test_protocol_stores_inputs():
     """Protocol should store its supplied configuration."""
@@ -56,8 +59,10 @@ def test_protocol_type_is_case_insensitive():
 
     assert protocol.type == "IV"
 
+
 # Peripheral compartment equations
 # Check drug transfer between the central and peripheral compartments
+
 
 def test_compartment_equation():
     """Peripheral exchange should match the PK equation."""
@@ -126,8 +131,10 @@ def test_all_compartment_equations():
 
     np.testing.assert_allclose(actual, expected)
 
+
 # Central compartment equation
 # Check central elimination, drug input, and peripheral distribution
+
 
 def test_central_equation():
     """Central derivative should include input, elimination and distribution."""
@@ -153,8 +160,10 @@ def test_central_equation():
 
     assert actual == expected
 
+
 # Complete IV ODE system
 # Check that central and peripheral equations are assembled correctly
+
 
 def test_iv_system_equation():
     """IV system equation should return correct central/peripheral rates."""
@@ -201,8 +210,10 @@ def test_callable_iv_dose():
 
     np.testing.assert_allclose(actual, expected)
 
+
 # Numerical solver behaviour
 # Check the default time grid and dimensions of the integrated solution
+
 
 def test_default_time_grid_contains_200_points():
     """Protocol should generate 200 evaluation times by default."""
@@ -218,8 +229,10 @@ def test_solution_has_one_row_per_compartment():
     # Central + one peripheral
     assert protocol.y.shape[0] == 2
 
+
 # Subcutaneous administration
 # Check depot absorption and transfer of absorbed drug into the central state.
+
 
 def test_sc_system_equation():
     """SC model should include absorption/depot dynamics."""
