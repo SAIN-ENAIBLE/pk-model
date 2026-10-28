@@ -2,6 +2,7 @@ import numpy as np
 from scipy.linalg import expm
 
 from pk_model.protocol import Protocol
+from pk_model.solve import solve_protocol
 
 
 def test_central_compartment_analytical_solution():
@@ -20,7 +21,7 @@ def test_central_compartment_analytical_solution():
     )
 
     times = np.linspace(0, 10, 50)
-    result = model.solver(t_span=(0, 10), t_eval=times)
+    result = solve_protocol(model, t_span=(0, 10), t_eval=times)
 
     expected = 100.0 * np.exp(-times / 5.0)
 
