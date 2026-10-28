@@ -90,8 +90,8 @@ def test_invalid_clearance_raises_value_error(clearance):
 def test_model_requires_central_params():
     """Model should only accept a CentralParams object."""
 
-    with pytest.raises(TypeError)
-    Model("not CentralParams")
+    with pytest.raises(TypeError):
+        Model("not CentralParams")
 
 
 def test_one_compartment_model():
@@ -243,3 +243,31 @@ def test_three_compartment_rhs():
     expected = [-30.75, 16.0, 4.75]
 
     np.testing.assert_allclose(actual, expected)
+
+###
+### Invalid state test
+###
+
+def test_incorrect_state_vector():
+    """There must be one state variable per compartment."""
+
+    peripheral = PeripheralParams(
+        volume = 10.0, 
+        flow = 2.0, 
+    )
+
+    model = Model(
+        CentralParams(
+            central_volume = 5.0, 
+            clearance = 1,
+            peripherals = (peripheral,), 
+        )
+    )
+
+    # Two-compartment model requires [q_c, q_p1]
+
+    with pytest.raises(ValueError):
+        model.rhs(
+            t = 0.0,
+            y = [50.0]
+        )
