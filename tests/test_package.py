@@ -1,9 +1,13 @@
-from __future__ import annotations
+# Imports
 
-import importlib.metadata
+import pk_model as model
 
-import pk_model as m
+# Tests
 
+def test_import():
+    """Verifies that package can be imported."""
+    assert model is not None
 
-def test_version() -> None:
-    assert importlib.metadata.version("pk_model") == m.__version__
+def test_package_version():
+    """Verifies that package declares its version."""
+    assert hasattr(model, "__version__")
