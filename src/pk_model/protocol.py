@@ -1,13 +1,14 @@
-#
-# Protocol class
-#
+import numpy as np
+from time import perf_counter
 from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
 
 class IV:
-    def __init__(self, dose, central, compartments):
+    def __init__(self, dose, central, compartments, t_span, t_eval=None):
         self.dose = dose
         self.central = central
         self.compartments = compartments
+        self.compartment_names = list(compartments.keys())
         self.all_compartment_list = []
         self.qp_list = [
             values[f"q{i}"]
@@ -22,6 +23,20 @@ class IV:
             values[f"Q{i}"]
             for i, values in enumerate(self.compartments.values(), start=1)
         ]
+
+        if t_eval is None:
+            t_eval = np.linspace(t_span[0], t_span[1], 200)
+
+        start_time = perf_counter()
+        self.solution = self.solver(t_span, t_eval)
+        self.solve_time = perf_counter() - start_time
+
+        if not self.solution.success:
+                    raise RuntimeError(f"ODE solver failed: {self.solution.message}")
+
+        self.t = self.solution.t
+        self.y = self.solution.y
+
 
 
     def compartment_eq(self, Qp, qc, vc, qp, vp):
@@ -92,7 +107,23 @@ class IV:
             atol=1e-11,
         )
 
-        return solution.y
+        return solution
 
-    
+    def plot(self):
+        """Plot drug quantity against time for each compartment."""
+        labels = ["Central"] + self.compartment_names
+
+        fig, ax = plt.subplots(figsize=(9, 5))
+
+        for i, label in enumerate(labels):
+            ax.plot(self.t, self.y[i], label=label)
+
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Drug quantity")
+        ax.set_title("Drug quantity over time")
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+        fig.tight_layout()
+        return fig, ax
 
