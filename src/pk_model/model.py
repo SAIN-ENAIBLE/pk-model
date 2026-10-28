@@ -6,6 +6,7 @@ from math import isfinite
 @dataclass(frozen=True)
 class PeripheralParams:
     """Peripheral parameters for the model."""
+
     volume: float
     flow: float
 
@@ -19,6 +20,7 @@ class PeripheralParams:
 @dataclass(frozen=True)
 class CentralParams:
     """Central parameters for the model."""
+
     central_volume: float
     clearance: float
     peripherals: tuple[PeripheralParams, ...] = ()
@@ -49,7 +51,12 @@ class Model:
         """Return the number of compartments in the model."""
         return 1 + len(self.params.peripherals)
 
-    def rhs(self, t: float, y: Sequence[float], dose_rate: float | Callable[[float], float] = 0.0) -> list[float]:
+    def rhs(
+        self,
+        t: float,
+        y: Sequence[float],
+        dose_rate: float | Callable[[float], float] = 0.0,
+    ) -> list[float]:
         """Return drug amount derivatives at time ``t``.
 
         ``y`` contains ``[q_c, q_p1, ..., q_pN]``. ``dose_rate`` is ``Dose(t)``:
@@ -66,7 +73,9 @@ class Model:
         step below zero; states are never clipped within the equations.
         """
         if len(y) != self.n_compartments():
-            raise ValueError("State vector length does not match number of compartments.")
+            raise ValueError(
+                "State vector length does not match number of compartments."
+            )
 
         input_rate = dose_rate(t) if callable(dose_rate) else dose_rate
         if not isfinite(input_rate) or input_rate < 0:

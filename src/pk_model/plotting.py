@@ -21,7 +21,7 @@ def plot_solutions(solutions, labels=None):
             labels = [""]
         else:
             labels = [f"Solution {i + 1}" for i in range(len(solutions))]
-            
+
     elif isinstance(labels, str) or len(labels) != len(solutions):
         raise ValueError("Provide one label per solution.")
 

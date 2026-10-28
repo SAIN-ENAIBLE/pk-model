@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+
 import numpy as np
 
 """mg for the dose, ng for the amount, hours for time, L for volume, L/h for clearance and flow."""
+
 
 @dataclass(frozen=True)
 class Bolus:
@@ -19,7 +21,7 @@ class Bolus:
 class Infusion:
     start: float
     end: float
-    rate: float # Amount per unit time
+    rate: float  # Amount per unit time
 
     def __post_init__(self):
         if not np.isfinite(self.start) or not np.isfinite(self.end):
