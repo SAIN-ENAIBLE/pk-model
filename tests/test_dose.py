@@ -5,7 +5,7 @@ import pytest
 
 from pk_model.dose import Dose
 
-### Tests 
+### Tests
 
 # ---------------------------------------------------------------------
 # Bolus construction
@@ -26,19 +26,20 @@ def test_bolus_dose():
 
 
 def test_bolus_at_time_zero():
-    """Administration at the beginning of a simulation should be valid."""
+    """A bolus at the start of a simulation should be valid."""
 
     dose = Dose.bolus(
         amount=100.0,
         t=0.0,
     )
 
+    assert dose.amount == 100.0
     assert dose.t == 0.0
 
 
 # ---------------------------------------------------------------------
-# Dose validation
-# Reject non-positive/non-finite amounts and invalid administration times.
+# Dose amount validation
+# Reject zero, negative, and non-finite dose amounts.
 # ---------------------------------------------------------------------
 
 
@@ -46,7 +47,7 @@ def test_bolus_at_time_zero():
     "amount",
     [0.0, -1.0, np.inf, -np.inf, np.nan],
 )
-def test_invalid_dose_amount(amount):
+def test_invalid_dose_amount_raises_value_error(amount):
     """Dose amount must be positive and finite."""
 
     with pytest.raises(ValueError):
@@ -56,11 +57,17 @@ def test_invalid_dose_amount(amount):
         )
 
 
+# ---------------------------------------------------------------------
+# Dose time validation
+# Reject negative and non-finite administration times.
+# ---------------------------------------------------------------------
+
+
 @pytest.mark.parametrize(
     "time",
     [-1.0, np.inf, -np.inf, np.nan],
 )
-def test_invalid_dose_time(time):
+def test_invalid_dose_time_raises_value_error(time):
     """Dose time must be non-negative and finite."""
 
     with pytest.raises(ValueError):
@@ -71,13 +78,13 @@ def test_invalid_dose_time(time):
 
 
 # ---------------------------------------------------------------------
-# Infusion
-# Infusion dosing is explicitly not implemented yet.
+# Infusion dosing
+# Confirm that the currently unsupported infusion API fails explicitly.
 # ---------------------------------------------------------------------
 
 
 def test_infusion_not_implemented():
-    """Infusion constructor should report that it is unsupported."""
+    """Infusion dosing should explicitly report that it is unsupported."""
 
     with pytest.raises(NotImplementedError):
         Dose.infusion(
