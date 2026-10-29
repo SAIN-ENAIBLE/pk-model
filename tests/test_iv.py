@@ -29,7 +29,7 @@ def test_central_compartment_analytical_solution():
     )
 
     times = np.linspace(0, 10, 50)
-    result = solve_protocol(model, t_span=(0, 10), t_eval=times)
+    solve_protocol(model, t_span=(0, 10), t_eval=times)
 
     expected = 100.0 * np.exp(-times / 5.0)
 
