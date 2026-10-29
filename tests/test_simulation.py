@@ -3,7 +3,7 @@ import pytest
 
 from pk_model.clear import Clear
 from pk_model.dose import Dose
-from pk_model.model import CentralParams, Model
+from pk_model.model import CentralParams, Model, PeripheralParams
 from pk_model.simulation import Simulation
 
 
@@ -43,6 +43,114 @@ def test_simulation_applies_later_bolus_after_prior_dynamics():
     np.testing.assert_allclose(
         solution.y[0, 1:], [amount_at_five, expected_at_ten], rtol=1e-7
     )
+
+
+# ---------------------------------------------------------------------
+# IV pharmacokinetic behaviour
+# Check expected elimination and distribution behaviour.
+# ---------------------------------------------------------------------
+
+
+def test_higher_clearance_causes_faster_elimination():
+    """Higher clearance should leave less central drug at a fixed time."""
+
+    times = np.linspace(0, 10, 50)
+
+    low_clearance = Simulation(
+        model=make_model(),
+        regime=[Dose.bolus(amount=100.0, t=0.0)],
+        protocol="IV",
+        clear=Clear(clearance=0.5),
+    )
+
+    high_clearance = Simulation(
+        model=make_model(),
+        regime=[Dose.bolus(amount=100.0, t=0.0)],
+        protocol="IV",
+        clear=Clear(clearance=2.0),
+    )
+
+    low_solution = low_clearance.solve(
+        t_end=10.0,
+        t_eval=times,
+    )
+
+    high_solution = high_clearance.solve(
+        t_end=10.0,
+        t_eval=times,
+    )
+
+    # Greater clearance should remove drug more rapidly.
+    assert high_solution.y[0, -1] < low_solution.y[0, -1]
+
+
+def test_one_compartment_quantity_decreases_after_iv_bolus():
+    """Central amount should monotonically decrease after an IV bolus."""
+
+    times = np.linspace(0, 10, 100)
+
+    simulation = Simulation(
+        model=make_model(),
+        regime=[Dose.bolus(amount=100.0, t=0.0)],
+        protocol="IV",
+        clear=Clear(clearance=1.0),
+    )
+
+    solution = simulation.solve(
+        t_end=10.0,
+        t_eval=times,
+    )
+
+    # Difference between each pair of consecutive time points.
+    differences = np.diff(solution.y[0])
+
+    # After the initial bolus, with no further drug input,
+    # central quantity should continuously decrease.
+    assert np.all(differences < 0)
+
+
+# ---------------------------------------------------------------------
+# Distribution behaviour
+# Check expected movement of drug between central and peripheral states.
+# ---------------------------------------------------------------------
+
+
+def test_drug_distributes_into_empty_peripheral_compartment():
+    """Drug should initially move from central into an empty peripheral."""
+
+    times = np.linspace(0, 1, 50)
+
+    peripheral = PeripheralParams(
+        volume=10.0,
+        flow=2.0,
+    )
+
+    model = Model(
+        CentralParams(
+            central_volume=5.0,
+            clearance=1.0,
+            peripherals=(peripheral,),
+        )
+    )
+
+    simulation = Simulation(
+        model=model,
+        regime=[Dose.bolus(amount=100.0, t=0.0)],
+        protocol="IV",
+        clear=Clear(clearance=1.0),
+    )
+
+    solution = simulation.solve(
+        t_end=1.0,
+        t_eval=times,
+    )
+
+    # Peripheral compartment starts empty.
+    assert solution.y[1, 0] == 0.0
+
+    # The initial central-to-peripheral concentration gradient
+    # should cause drug to enter the peripheral compartment.
+    assert solution.y[1, 1] > 0.0
 
 
 def test_plot_requires_solution_and_returns_figure_after_solve():
