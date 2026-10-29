@@ -9,6 +9,7 @@ from pk_model.protocol import Protocol
 
 def test_iv_central_compartment_analytical_solution():
     
+    # Solver setup and solution.
     peripherals = ()
     comp = Comp(central_volume=15,
                     peripherals=peripherals)
@@ -24,12 +25,14 @@ def test_iv_central_compartment_analytical_solution():
                comp = comp,
                clear = linear_clearance)
     
-    
     result = iv.solve(t_end=48)
+    
+    # Analytical solution.
     k, R, T = 20 / 15, 15, 30  # k = CL / V, infusion rate, infusion end
     t = result.t
     q_T = (R / k) * (1 - np.exp(-k * T))
-    expected = np.where(t < T, (R / k) * (1 - np.exp(-k * t)), q_T * np.exp(-k * (t - T)))
+    expected = np.where(t < T, (R / k) * (1 - np.exp(-k * t)), 
+                        q_T * np.exp(-k * (t - T)))
     assert np.allclose(result.y[0], expected, rtol=1e-5, atol=1e-8)
     
     
