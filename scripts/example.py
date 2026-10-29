@@ -29,14 +29,14 @@ def main():
         regime=regime,
         protocol="SC",
         clear=clear,
-        Ka=0.5,  # Absorption rate (1/h); SC doses enter a depot first.
+        Ka=0.5,  # Absorption rate (1/h); SC doses enter q_0 first.
     )
 
     times = np.linspace(0.0, 48.0, 481)
     iv_solution = iv.solve(t_end=48.0, t_eval=times)
     sc_solution = sc.solve(t_end=48.0, t_eval=times)
 
-    # IV rows: central, peripheral. SC adds a final depot row.
+    # IV rows: central, peripheral. SC adds a final q_0 row.
     for route, solution in [("IV", iv_solution), ("SC", sc_solution)]:
         print(
             f"{route}: computed {len(solution.t)} time points; "

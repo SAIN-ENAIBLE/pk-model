@@ -1,19 +1,19 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from math import isfinite
 
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy.integrate import solve_ivp
 
 from .clear import Clear
 from .dose import Dose
 from .model import Model
-from .routes import validate_route
 
 
 @dataclass(frozen=True)
 class SimulationSolution:
-    """Amounts ordered central, peripherals, then depot for SC solutions."""
+    """Amounts ordered central, peripherals, then q_0 for SC solutions."""
 
     t: np.ndarray
     y: np.ndarray
@@ -21,7 +21,7 @@ class SimulationSolution:
     message: str = (
         "The solver successfully reached the end of the integration interval."
     )
-    depot_index: int | None = None
+    q_0_index: int | None = None
 
 
 def solve_regimen(
@@ -29,24 +29,23 @@ def solve_regimen(
     regimen: Sequence[Dose],
     clear: Clear,
     t_span: tuple[float, float],
-    t_eval: Sequence[float] | None = None,
+    t_eval: ArrayLike | None = None,
     protocol: str = "IV",
     Ka: float | None = None,
+    dose_rate: float | Callable[[float], float] = 0.0,
 ) -> SimulationSolution:
-    """Apply IV boluses to central or SC boluses to a first-order depot.
+    """Apply IV boluses to central or SC boluses to injection-site amount q_0.
 
     ``Ka`` has inverse-time units. SC assumes complete bioavailability.
+    ``dose_rate`` supplies an additional constant or callable input rate:
+    into central for IV, into q_0 for SC. Boluses remain discrete jumps.
     """
-    route = validate_route(protocol, Ka)
-    has_depot = route == "SC"
-    dose_index = model.n_compartments() if has_depot else 0
+    route = model.validate_route(protocol, Ka)
+    has_q_0 = route == "SC"
+    dose_index = model.n_compartments() if has_q_0 else 0
 
     def rhs(t, y):
-        if has_depot:
-            absorption = Ka * y[-1]
-            rates = model.rhs(t, y[:-1], dose_rate=absorption, clear=clear)
-            return [*rates, -absorption]
-        return model.rhs(t, y, clear=clear)
+        return model.rhs(t, y, dose_rate=dose_rate, clear=clear, protocol=route, Ka=Ka)
 
     start, end = t_span
     _validate_time_span(start, end)
@@ -75,7 +74,7 @@ def solve_regimen(
     )
     boundaries = sorted({end, *dose_totals.keys()})
 
-    state = np.zeros(model.n_compartments() + has_depot, dtype=float)
+    state = np.zeros(model.n_compartments() + has_q_0, dtype=float)
     state[dose_index] += dose_totals.get(start, 0.0)
     result_times = [start]
     result_states = [state.copy()]
@@ -112,7 +111,7 @@ def solve_regimen(
     return SimulationSolution(
         t=np.asarray(result_times),
         y=np.asarray(result_states, dtype=float).T,
-        depot_index=dose_index if has_depot else None,
+        q_0_index=dose_index if has_q_0 else None,
     )
 
 
@@ -136,3 +135,6 @@ def solve_protocol(protocol, t_span, t_eval):
         rtol=1e-9,
         atol=1e-11,
     )
+
+
+# Coverage incorrect due to the fact that solve_protocol is called in the Protocol constructor, which is not called in the tests. The tests call solve_regimen directly instead.

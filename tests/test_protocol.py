@@ -232,11 +232,11 @@ def test_solution_has_one_row_per_compartment():
 
 
 # Subcutaneous administration
-# Check depot absorption and transfer of absorbed drug into the central state.
+# Check q_0 absorption and transfer of absorbed drug into the central state.
 
 
 def test_sc_system_equation():
-    """SC model should include absorption/depot dynamics."""
+    """SC model should include absorption/q_0 dynamics."""
     protocol = Protocol(
         dose=0.0,
         central={
@@ -250,17 +250,17 @@ def test_sc_system_equation():
         Ka=0.5,
     )
 
-    # y = [central quantity, depot quantity]
+    # y = [central quantity, q_0 quantity]
     actual = protocol.system_eq(
         t=0.0,
         y=[0.0, 100.0],
     )
 
-    # dq0/dt = dose - Ka*q0
+    # dq_0/dt = dose - Ka*q_0
     #         = 0 - 0.5*100
     #         = -50
     #
-    # absorption into central = Ka*q0 = 50
+    # absorption into central = Ka*q_0 = 50
     #
     # central starts empty, so elimination = 0
     # dqc/dt = 50
