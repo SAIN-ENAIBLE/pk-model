@@ -272,3 +272,24 @@ def test_incorrect_state_vector():
 
     with pytest.raises(ValueError):
         model.rhs(t=0.0, y=[50.0])
+
+@pytest.mark.parametrize(
+    "dose_rate",
+    [-1.0, np.inf, -np.inf, np.nan],
+)
+def test_invalid_dose_rate_raises_value_error(dose_rate):
+    """Dose rate must be non-negative and finite."""
+
+    model = Model(
+        CentralParams(
+            central_volume=5.0,
+            clearance=1.0,
+        )
+    )
+
+    with pytest.raises(ValueError):
+        model.rhs(
+            t=0.0,
+            y=[100.0],
+            dose_rate=dose_rate,
+        )
