@@ -74,9 +74,9 @@ def test_route_must_be_string():
 
     with pytest.raises(TypeError):
         validate_route(
-            protocol=123, 
+            protocol=123,
             Ka=None,
-            )
+        )
 
 
 # ---------------------------------------------------------------------

@@ -273,6 +273,7 @@ def test_incorrect_state_vector():
     with pytest.raises(ValueError):
         model.rhs(t=0.0, y=[50.0])
 
+
 @pytest.mark.parametrize(
     "dose_rate",
     [-1.0, np.inf, -np.inf, np.nan],
