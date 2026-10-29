@@ -212,6 +212,7 @@ def test_unknown_route_is_rejected():
     with pytest.raises(ValueError, match="Unknown administration route"):
         Simulation(make_model(), [], "unknown", Clear(1.0))
 
+
 # ---------------------------------------------------------------------
 # Simulation input validation
 # Check that Simulation requires the expected model, regimen and clearance types.
