@@ -256,11 +256,11 @@ def test_sc_system_equation():
         y=[0.0, 100.0],
     )
 
-    # dq0/dt = dose - Ka*q0
+    # d_depot/dt = dose - Ka*depot
     #         = 0 - 0.5*100
     #         = -50
     #
-    # absorption into central = Ka*q0 = 50
+    # absorption into central = Ka*depot = 50
     #
     # central starts empty, so elimination = 0
     # dqc/dt = 50

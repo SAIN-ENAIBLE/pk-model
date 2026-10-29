@@ -1,10 +1,11 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+
+from numpy.typing import ArrayLike
 
 from .clear import Clear
 from .dose import Dose
 from .model import Model
 from .plotting import plot_solution
-from .routes import validate_route
 from .solve import SimulationSolution, solve_regimen
 
 
@@ -25,7 +26,7 @@ class Simulation:
             raise TypeError("regime must be a sequence of Dose events.")
         if not all(isinstance(dose, Dose) for dose in regime):
             raise TypeError("Every regime item must be a Dose instance.")
-        route = validate_route(protocol, Ka)
+        route = model.validate_route(protocol, Ka)
         if not isinstance(clear, Clear):
             raise TypeError("clear must be a Clear instance.")
 
@@ -37,9 +38,17 @@ class Simulation:
         self.solution: SimulationSolution | None = None
 
     def solve(
-        self, t_end: float, t_start: float = 0.0, t_eval: Sequence[float] | None = None
+        self,
+        t_end: float,
+        t_start: float = 0.0,
+        t_eval: ArrayLike | None = None,
+        dose_rate: float | Callable[[float], float] = 0.0,
     ) -> SimulationSolution:
-        """Solve from ``t_start`` to ``t_end``, applying boluses at their times."""
+        """Apply boluses and an optional Dose(t) input rate over the time span.
+
+        ``dose_rate`` enters central for IV and injection-site amount depot for SC.
+        Use consistent amount/time units; the default rate is zero.
+        """
         self.solution = solve_regimen(
             model=self.model,
             regimen=self.regime,
@@ -48,6 +57,7 @@ class Simulation:
             t_eval=t_eval,
             protocol=self.protocol,
             Ka=self.Ka,
+            dose_rate=dose_rate,
         )
         return self.solution
 

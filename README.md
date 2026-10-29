@@ -21,11 +21,17 @@ For SC, supply a positive absorption rate `Ka` in inverse-time units:
 ```python
 from pk_model.clear import Clear
 from pk_model.dose import Dose
-from pk_model.model import CentralParams, Model
+from pk_model.model import CentralParams, Model, PeripheralParams
 from pk_model.simulation import Simulation
 
 simulation = Simulation(
-    model=Model(CentralParams(central_volume=5.0, clearance=1.0)),
+    model=Model(
+        CentralParams(
+            central_volume=5.0,
+            clearance=1.0,
+            peripherals=(PeripheralParams(volume=10.0, flow=2.0),),
+        )
+    ),
     regime=[Dose.bolus(amount=100.0, t=0.0)],
     protocol="SC",
     clear=Clear(clearance=1.0),
@@ -34,8 +40,34 @@ simulation = Simulation(
 solution = simulation.solve(t_end=24.0)
 ```
 
-SC doses enter a depot and absorb into the central compartment with complete
-bioavailability. Solution rows contain central, peripheral, then depot amounts.
+SC doses enter the injection-site compartment (amount `depot`) and absorb into
+the central compartment with complete bioavailability. Solution rows contain
+central, peripheral, then `depot` amounts, identified by `solution.depot_index`.
+For one peripheral, the equations are:
+
+```text
+d(depot)/dt = Dose(t) - Ka*depot
+dqc/dt      = Ka*depot - CL*qc/Vc - Qp1*(qc/Vc - qp1/Vp1)
+dqp1/dt     = Qp1*(qc/Vc - qp1/Vp1)
+```
+
+`Model.rhs(..., protocol="SC", Ka=0.5)` implements these equations, extending
+the exchange terms to every configured peripheral. States are ordered
+`[qc, qp1, ..., depot]`.
+Use `protocol="IV"` (the default) for direct central input without `depot`.
+`rhs_sc()` remains a compatibility wrapper around the SC option in `rhs()`.
+`Ka` is in 1/h when time is in hours; `Dose(t)` is an amount per hour.
+Bolus events add their amounts to `depot` at the administration times, with zero
+input rate between events by default. An optional `dose_rate` supplies the
+continuous `Dose(t)` term, as a constant or a function of time:
+
+```python
+solution = simulation.solve(t_end=24.0, dose_rate=lambda t: 2.0 * t)
+```
+
+This rate adds to any boluses in `regime`; use `regime=[]` for continuous input
+alone. For IV, `dose_rate` enters the central compartment directly.
+
 Full route names are also accepted, case-insensitively. Intramuscular (`"IM"`)
 and intradermal (`"ID"`) routes raise `NotImplementedError` in both `Simulation`
 and the older `Protocol` API.

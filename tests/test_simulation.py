@@ -193,7 +193,7 @@ def test_sc_repeated_boluses_match_analytical_absorption(Ka):
     np.testing.assert_allclose(solution.y, [central, depot], rtol=1e-7, atol=1e-9)
     assert solution.depot_index == 1
     _, axes = simulation.plot()
-    assert [line.get_label() for line in axes.lines] == ["Central", "Depot"]
+    assert [line.get_label() for line in axes.lines] == ["Central", "depot"]
 
 
 @pytest.mark.parametrize("route", ["IM", "ID", "intramuscular", "intradermal"])
