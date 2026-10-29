@@ -8,11 +8,12 @@ from scipy.integrate import solve_ivp
 from .clear import Clear
 from .dose import Dose
 from .model import Model
+from .routes import validate_route
 
 
 @dataclass(frozen=True)
 class SimulationSolution:
-    """Time points and compartment amounts returned by a simulation."""
+    """Amounts ordered central, peripherals, then depot for SC solutions."""
 
     t: np.ndarray
     y: np.ndarray
@@ -20,6 +21,7 @@ class SimulationSolution:
     message: str = (
         "The solver successfully reached the end of the integration interval."
     )
+    depot_index: int | None = None
 
 
 def solve_regimen(
@@ -28,8 +30,24 @@ def solve_regimen(
     clear: Clear,
     t_span: tuple[float, float],
     t_eval: Sequence[float] | None = None,
+    protocol: str = "IV",
+    Ka: float | None = None,
 ) -> SimulationSolution:
-    """Integrate the model between IV boluses and apply each dose to the central state."""
+    """Apply IV boluses to central or SC boluses to a first-order depot.
+
+    ``Ka`` has inverse-time units. SC assumes complete bioavailability.
+    """
+    route = validate_route(protocol, Ka)
+    has_depot = route == "SC"
+    dose_index = model.n_compartments() if has_depot else 0
+
+    def rhs(t, y):
+        if has_depot:
+            absorption = Ka * y[-1]
+            rates = model.rhs(t, y[:-1], dose_rate=absorption, clear=clear)
+            return [*rates, -absorption]
+        return model.rhs(t, y, clear=clear)
+
     start, end = t_span
     _validate_time_span(start, end)
     dose_totals: dict[float, float] = {}
@@ -57,8 +75,8 @@ def solve_regimen(
     )
     boundaries = sorted({end, *dose_totals.keys()})
 
-    state = np.zeros(model.n_compartments(), dtype=float)
-    state[0] += dose_totals.get(start, 0.0)
+    state = np.zeros(model.n_compartments() + has_depot, dtype=float)
+    state[dose_index] += dose_totals.get(start, 0.0)
     result_times = [start]
     result_states = [state.copy()]
     current_time = start
@@ -72,7 +90,7 @@ def solve_regimen(
         ]
         evaluation_times = np.append(segment_times, boundary)
         solution = solve_ivp(
-            fun=lambda t, y: model.rhs(t, y, clear=clear),
+            fun=rhs,
             t_span=(current_time, boundary),
             y0=state,
             t_eval=evaluation_times,
@@ -86,7 +104,7 @@ def solve_regimen(
         result_times.extend(solution.t[:-1].tolist())
         result_states.extend(solution.y[:, :-1].T.tolist())
         state = solution.y[:, -1]
-        state[0] += dose_totals.get(boundary, 0.0)
+        state[dose_index] += dose_totals.get(boundary, 0.0)
         result_times.append(boundary)
         result_states.append(state.copy())
         current_time = boundary
@@ -94,6 +112,7 @@ def solve_regimen(
     return SimulationSolution(
         t=np.asarray(result_times),
         y=np.asarray(result_states, dtype=float).T,
+        depot_index=dose_index if has_depot else None,
     )
 
 
@@ -107,7 +126,7 @@ def solve_protocol(protocol, t_span, t_eval):
     y0 = [protocol.central["qc"]] + protocol.qp_list
 
     if protocol.type != "IV":
-        y0.append(protocol.dose)
+        y0.append(0.0 if callable(protocol.dose) else protocol.dose)
 
     return solve_ivp(
         fun=protocol.system_eq,

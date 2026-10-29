@@ -4,14 +4,20 @@ from .clear import Clear
 from .dose import Dose
 from .model import Model
 from .plotting import plot_solution
+from .routes import validate_route
 from .solve import SimulationSolution, solve_regimen
 
 
 class Simulation:
-    """Solve and plot a compartment model with an IV bolus regimen."""
+    """Solve and plot IV or subcutaneous boluses (SC requires ``Ka``)."""
 
     def __init__(
-        self, model: Model, regime: Sequence[Dose], protocol: str, clear: Clear
+        self,
+        model: Model,
+        regime: Sequence[Dose],
+        protocol: str,
+        clear: Clear,
+        Ka: float | None = None,
     ) -> None:
         if not isinstance(model, Model):
             raise TypeError("model must be a Model instance.")
@@ -19,16 +25,14 @@ class Simulation:
             raise TypeError("regime must be a sequence of Dose events.")
         if not all(isinstance(dose, Dose) for dose in regime):
             raise TypeError("Every regime item must be a Dose instance.")
-        if not isinstance(protocol, str):
-            raise TypeError("protocol must be a route string.")
-        if protocol.upper() != "IV":
-            raise NotImplementedError("Only the IV protocol is currently supported.")
+        route = validate_route(protocol, Ka)
         if not isinstance(clear, Clear):
             raise TypeError("clear must be a Clear instance.")
 
         self.model = model
         self.regime = tuple(regime)
-        self.protocol = protocol.upper()
+        self.protocol = route
+        self.Ka = Ka
         self.clear = clear
         self.solution: SimulationSolution | None = None
 
@@ -42,11 +46,13 @@ class Simulation:
             clear=self.clear,
             t_span=(t_start, t_end),
             t_eval=t_eval,
+            protocol=self.protocol,
+            Ka=self.Ka,
         )
         return self.solution
 
     def plot(self):
-        """Return a Plotly figure for the most recently solved regimen."""
+        """Return a Matplotlib figure and axes for the solved regimen."""
         if self.solution is None:
             raise RuntimeError("Call solve() before plot().")
         return plot_solution(self.solution)

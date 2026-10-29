@@ -49,6 +49,8 @@ def plot_solutions(solutions, labels=None):
     for sol, label in zip(solutions, labels, strict=True):
         for i, amounts in enumerate(sol.y):
             compartment = "Central" if i == 0 else f"Peripheral {i}"
+            if i == getattr(sol, "depot_index", None):
+                compartment = "Depot"
             name = f"{label}: {compartment}" if label else compartment
             ax.plot(sol.t, amounts, label=name)
 

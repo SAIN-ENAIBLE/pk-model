@@ -1,6 +1,7 @@
 # Imports
 
 import numpy as np
+import pytest
 
 from pk_model.protocol import Protocol
 
@@ -267,3 +268,22 @@ def test_sc_system_equation():
     expected = [50.0, -50.0]
 
     np.testing.assert_allclose(actual, expected)
+
+
+def test_sc_scalar_dose_is_absorbed_once():
+    protocol = Protocol(
+        dose=100.0,
+        central={"qc": 0.0, "vc": 5.0, "cl": 0.0},
+        compartments={},
+        t_span=(0.0, 10.0),
+        type="SC",
+        Ka=0.5,
+    )
+    np.testing.assert_allclose(protocol.y.sum(axis=0), 100.0)
+    np.testing.assert_allclose(protocol.y[-1], 100.0 * np.exp(-0.5 * protocol.t))
+
+
+@pytest.mark.parametrize("route", ["IM", "ID", "intramuscular", "intradermal"])
+def test_unimplemented_protocol_routes(route):
+    with pytest.raises(NotImplementedError):
+        Protocol(0.0, {"qc": 0.0, "vc": 5.0, "cl": 1.0}, {}, (0, 1), type=route)
