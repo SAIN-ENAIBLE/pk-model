@@ -149,3 +149,14 @@ class Model:
         if is_sc:
             rates.append(d_depot)
         return rates
+
+    def rhs_sc(
+        self,
+        t: float,
+        y: Sequence[float],
+        Ka: float,
+        dose_rate: float | Callable[[float], float] = 0.0,
+        clear: Clear | None = None,
+    ) -> list[float]:
+        """Return SC derivatives for central, peripherals, and depot amounts."""
+        return self.rhs(t, y, dose_rate=dose_rate, clear=clear, protocol="SC", Ka=Ka)
