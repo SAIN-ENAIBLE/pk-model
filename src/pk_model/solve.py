@@ -9,6 +9,7 @@ from scipy.integrate import solve_ivp
 from .clear import Clear
 from .dose import Dose
 from .model import Model
+from .routes import validate_route
 
 
 @dataclass(frozen=True)

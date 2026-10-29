@@ -6,6 +6,7 @@ from .clear import Clear
 from .dose import Dose
 from .model import Model
 from .plotting import plot_solution
+from .routes import validate_route
 from .solve import SimulationSolution, solve_regimen
 
 
