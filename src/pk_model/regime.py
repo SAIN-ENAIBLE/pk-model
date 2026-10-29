@@ -8,18 +8,21 @@ Every regime answers two questions for Model.rhs():
   rate, return (how its own amounts change, drug flowing into central).
 """
 
+from abc import ABC, abstractmethod
+
 import numpy as np
 
 
-class Regime:
-    """The contract every regime follows. Subclasses fill in both members."""
+class Regime(ABC):
+    """The contract every regime follows. Subclasses must set n_states and
+    implement derivatives(), or they cannot be created."""
 
     n_states: int
 
+    @abstractmethod
     def derivatives(
         self, t: float, q_abs: np.ndarray, dose_rate: float
-    ) -> tuple[np.ndarray, float]:
-        raise NotImplementedError
+    ) -> tuple[np.ndarray, float]: ...
 
 
 class IV(Regime):
