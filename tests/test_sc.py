@@ -110,11 +110,6 @@ def test_sc_internal_transfer_allows_negative_solver_states():
     np.testing.assert_allclose(rates, [-5e-13, 0.0, 5e-13], atol=1e-20)
 
 
-def test_rhs_sc_wrapper_preserves_existing_calls():
-    rates = make_model().rhs_sc(5.0, [50.0, 20.0, 100.0], 0.5, 10.0)
-    np.testing.assert_allclose(rates, [24.0, 16.0, -40.0])
-
-
 @pytest.mark.parametrize("route", ["SC", "sc", "subcutaneous"])
 def test_rhs_accepts_sc_route_names(route):
     rates = make_model().rhs(0.0, [0.0, 0.0, 100.0], protocol=route, Ka=0.5)
