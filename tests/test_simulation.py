@@ -211,3 +211,63 @@ def test_sc_requires_positive_finite_absorption_rate(Ka):
 def test_unknown_route_is_rejected():
     with pytest.raises(ValueError, match="Unknown administration route"):
         Simulation(make_model(), [], "unknown", Clear(1.0))
+
+# ---------------------------------------------------------------------
+# Simulation input validation
+# Check that Simulation requires the expected model, regimen and clearance types.
+# ---------------------------------------------------------------------
+
+
+def test_simulation_requires_model():
+    """Simulation should require a Model instance."""
+
+    with pytest.raises(TypeError):
+        Simulation(
+            model="not a model",
+            regime=[],
+            protocol="IV",
+            clear=Clear(1.0),
+        )
+
+
+@pytest.mark.parametrize(
+    "regime",
+    [
+        "not a regimen",
+        123,
+    ],
+)
+def test_simulation_requires_dose_sequence(regime):
+    """Regimen should be a sequence rather than an arbitrary object."""
+
+    with pytest.raises(TypeError):
+        Simulation(
+            model=make_model(),
+            regime=regime,
+            protocol="IV",
+            clear=Clear(1.0),
+        )
+
+
+def test_simulation_requires_dose_items():
+    """Every regimen item should be a Dose."""
+
+    with pytest.raises(TypeError):
+        Simulation(
+            model=make_model(),
+            regime=["not a dose"],
+            protocol="IV",
+            clear=Clear(1.0),
+        )
+
+
+def test_simulation_requires_clearance():
+    """Simulation should require a Clear instance."""
+
+    with pytest.raises(TypeError):
+        Simulation(
+            model=make_model(),
+            regime=[],
+            protocol="IV",
+            clear=1.0,
+        )
