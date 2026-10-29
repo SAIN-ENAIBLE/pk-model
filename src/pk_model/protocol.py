@@ -2,6 +2,7 @@ from time import perf_counter
 
 import numpy as np
 
+from .routes import validate_route
 from .solve import solve_protocol
 
 """mg for the dose, ng for the amount, hours for time, L for volume, L/h for clearance and flow."""
@@ -13,13 +14,17 @@ class Protocol:  # TODO(1): God-class.
     ):
         """
         Initialise the Protocol class.
+
+        For SC, a scalar dose is an initial depot amount; a callable dose
+        supplies an input rate to an initially empty depot. Ka is the
+        first-order absorption rate in inverse-time units.
         """
         self.dose = dose
         self.central = central
         self.compartments = compartments
         self.compartment_count = len(compartments)
         self.compartment_names = list(compartments.keys())
-        self.type = type.upper()
+        self.type = validate_route(type, Ka)
         self.Ka = Ka
 
         self.all_compartment_list = []
@@ -113,7 +118,8 @@ class Protocol:  # TODO(1): God-class.
             )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ...)
 
         q0 = y[-1]  # the absorption
-        dq0 = dose - self.Ka * q0
+        depot_input = dose if callable(self.dose) else 0.0
+        dq0 = depot_input - self.Ka * q0
         absorption = self.Ka * q0
         dqc = self.central_eq(absorption, qc, vc, cl)
         return (

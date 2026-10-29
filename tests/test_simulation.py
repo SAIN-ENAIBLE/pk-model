@@ -60,3 +60,46 @@ def test_plot_requires_solution_and_returns_figure_after_solve():
     figure, axes = simulation.plot()
     assert figure.axes == [axes]
     assert len(axes.lines) == 1
+
+
+@pytest.mark.parametrize("Ka", [0.2, 0.5])
+def test_sc_repeated_boluses_match_analytical_absorption(Ka):
+    doses = [Dose.bolus(100.0, 0.0), Dose.bolus(20.0, 5.0)]
+    simulation = Simulation(make_model(), doses, "subcutaneous", Clear(1.0), Ka=Ka)
+    solution = simulation.solve(10.0, t_eval=[0.0, 2.0, 5.0, 10.0])
+
+    central = np.zeros_like(solution.t)
+    depot = np.zeros_like(solution.t)
+    for dose in doses:
+        elapsed = solution.t - dose.t
+        active = elapsed >= 0
+        dt = elapsed[active]
+        depot[active] += dose.amount * np.exp(-Ka * dt)
+        if Ka == 0.2:
+            central[active] += dose.amount * Ka * dt * np.exp(-Ka * dt)
+        else:
+            central[active] += (
+                dose.amount * Ka / (Ka - 0.2) * (np.exp(-0.2 * dt) - np.exp(-Ka * dt))
+            )
+
+    np.testing.assert_allclose(solution.y, [central, depot], rtol=1e-7, atol=1e-9)
+    assert solution.depot_index == 1
+    _, axes = simulation.plot()
+    assert [line.get_label() for line in axes.lines] == ["Central", "Depot"]
+
+
+@pytest.mark.parametrize("route", ["IM", "ID", "intramuscular", "intradermal"])
+def test_unimplemented_routes(route):
+    with pytest.raises(NotImplementedError):
+        Simulation(make_model(), [], route, Clear(1.0))
+
+
+@pytest.mark.parametrize("Ka", [None, 0.0, -1.0, float("inf"), float("nan")])
+def test_sc_requires_positive_finite_absorption_rate(Ka):
+    with pytest.raises(ValueError, match="Ka"):
+        Simulation(make_model(), [], "SC", Clear(1.0), Ka=Ka)
+
+
+def test_unknown_route_is_rejected():
+    with pytest.raises(ValueError, match="Unknown administration route"):
+        Simulation(make_model(), [], "unknown", Clear(1.0))
