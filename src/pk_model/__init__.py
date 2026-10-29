@@ -1,4 +1,4 @@
-"""Copyright (c) 2026 My Name. All rights reserved.
+"""Copyright (c) 2026 SAIN-ENAIBLE. All rights reserved.
 
 pk-model: A great package.
 """

@@ -3,7 +3,7 @@
 A Python library for pharmacokinetic (PK) modelling: define a compartment
 model, define a dosing protocol, solve, and plot.
 
-[![CI](https://github.com/org/pk-model/actions/workflows/ci.yml/badge.svg)](https://github.com/org/pk-model/actions/workflows/ci.yml)
+[![CI](https://github.com/SAIN-ENAIBLE/pk-model/actions/workflows/ci.yml/badge.svg)](https://github.com/SAIN-ENAIBLE/pk-model/actions/workflows/ci.yml)
 
 <!-- SPHINX-START -->
 
@@ -55,7 +55,6 @@ dqp1/dt     = Qp1*(qc/Vc - qp1/Vp1)
 the exchange terms to every configured peripheral. States are ordered
 `[qc, qp1, ..., depot]`.
 Use `protocol="IV"` (the default) for direct central input without `depot`.
-`rhs_sc()` remains a compatibility wrapper around the SC option in `rhs()`.
 `Ka` is in 1/h when time is in hours; `Dose(t)` is an amount per hour.
 Bolus events add their amounts to `depot` at the administration times, with zero
 input rate between events by default. An optional `dose_rate` supplies the

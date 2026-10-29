@@ -6,9 +6,9 @@ build-backend = "hatchling.build"
 [project]
 name = "pk-model"
 authors = [
-  { name = "My Name", email = "me@email.com" },
+  { name = "SAIN-ENAIBLE", email = "sain-enaible@org.com" }
 ]
-description = "A great package."
+description = "Pharmokinetic Modelling package."
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
@@ -29,8 +29,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/org/pk-model"
-"Bug Tracker" = "https://github.com/org/pk-model/issues"
+Homepage = "https://github.com/SAIN-ENAIBLE/pk-model"
+"Bug Tracker" = "https://github.com/SAIN-ENAIBLE/pk-model/issues"
 
 
 [dependency-groups]
