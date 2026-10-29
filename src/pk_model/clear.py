@@ -1,9 +1,7 @@
 from collections.abc import Callable
-from math import isfinite
 
-def _require_positive(name: str, value: float) -> None:
-    if not isfinite(value) or value <=0:
-        raise ValueError(f"{name} must be a positive finite number (got {value} instead).")
+from ._validate import require_positive
+
 
 def constant(rate: float) -> Callable[[float, float], float]:
     """
@@ -36,7 +34,7 @@ def linear(CL: float) -> Callable[[float, float], float]:
         Callable[[float, float], float]: Linear clearance rate function.
     """
     
-    _require_positive("CL", CL)
+    require_positive("CL", CL)
 
     def clear(_t: float, conc: float) -> float:
         rate = CL * conc
@@ -56,8 +54,8 @@ def michaelis_menten(Vmax: float, Km: float) -> Callable[[float, float], float]:
         Callable[[float, float], float]: Michealis-Menten clearance rate function.
     """
 
-    _require_positive("Vmax", Vmax)
-    _require_positive("Km", Km)
+    require_positive("Vmax", Vmax)
+    require_positive("Km", Km)
     
     def clear(_t: float, conc: float) -> float:
         
