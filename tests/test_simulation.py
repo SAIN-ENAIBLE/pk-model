@@ -57,5 +57,6 @@ def test_plot_requires_solution_and_returns_figure_after_solve():
         simulation.plot()
 
     simulation.solve(t_end=1.0)
-    figure = simulation.plot()
-    assert len(figure.data) == 1
+    figure, axes = simulation.plot()
+    assert figure.axes == [axes]
+    assert len(axes.lines) == 1

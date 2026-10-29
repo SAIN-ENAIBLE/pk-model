@@ -11,11 +11,7 @@ class Simulation:
     """Solve and plot a compartment model with an IV bolus regimen."""
 
     def __init__(
-        self,
-        model: Model,
-        regime: Sequence[Dose],
-        protocol: str,
-        clear: Clear,
+        self, model: Model, regime: Sequence[Dose], protocol: str, clear: Clear
     ) -> None:
         if not isinstance(model, Model):
             raise TypeError("model must be a Model instance.")
@@ -37,10 +33,7 @@ class Simulation:
         self.solution: SimulationSolution | None = None
 
     def solve(
-        self,
-        t_end: float,
-        t_start: float = 0.0,
-        t_eval: Sequence[float] | None = None,
+        self, t_end: float, t_start: float = 0.0, t_eval: Sequence[float] | None = None
     ) -> SimulationSolution:
         """Solve from ``t_start`` to ``t_end``, applying boluses at their times."""
         self.solution = solve_regimen(

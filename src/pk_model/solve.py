@@ -1,19 +1,13 @@
-from __future__ import annotations
-
+from collections.abc import Sequence
 from dataclasses import dataclass
 from math import isfinite
-from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.integrate import solve_ivp
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from .clear import Clear
-    from .dose import Dose
-    from .model import Model
-    from .protocol import Protocol
+from .clear import Clear
+from .dose import Dose
+from .model import Model
 
 
 @dataclass(frozen=True)
@@ -85,6 +79,7 @@ def solve_regimen(
             rtol=1e-9,
             atol=1e-11,
         )
+
         if not solution.success:
             raise RuntimeError(f"ODE solver failed: {solution.message}")
 
@@ -107,7 +102,7 @@ def _validate_time_span(t_start: float, t_end: float) -> None:
         raise ValueError("Time span must have finite start < end.")
 
 
-def solve_protocol(protocol: Protocol, t_span, t_eval):
+def solve_protocol(protocol, t_span, t_eval):
     """Solve a Protocol's compartment equations over the requested time span."""
     y0 = [protocol.central["qc"]] + protocol.qp_list
 
