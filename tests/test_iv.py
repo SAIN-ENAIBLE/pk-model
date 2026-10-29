@@ -2,7 +2,6 @@ import numpy as np
 from scipy.linalg import expm
 
 from pk_model.protocol import Protocol
-from pk_model.solve import solve_protocol
 
 # ---------------------------------------------------------------------
 # Analytical validation
