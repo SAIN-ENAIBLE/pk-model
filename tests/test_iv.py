@@ -2,6 +2,7 @@ import numpy as np
 from scipy.linalg import expm
 
 from pk_model.protocol import Protocol
+from pk_model.solve import solve_protocol
 
 # ---------------------------------------------------------------------
 # Analytical validation
@@ -27,7 +28,9 @@ def test_central_compartment_analytical_solution():
         Ka=None,
     )
 
-    # Exact solution: q(t) = q0 * exp(-(CL/V)t)
+    times = np.linspace(0, 10, 50)
+    solve_protocol(model, t_span=(0, 10), t_eval=times)
+
     expected = 100.0 * np.exp(-times / 5.0)
 
     assert model.solution.success

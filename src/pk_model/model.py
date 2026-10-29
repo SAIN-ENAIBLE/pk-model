@@ -2,6 +2,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from math import isfinite
 
+from .clear import Clear
+
 
 @dataclass(frozen=True)
 class PeripheralParams:
@@ -56,6 +58,7 @@ class Model:
         t: float,
         y: Sequence[float],
         dose_rate: float | Callable[[float], float] = 0.0,
+        clear: Clear | None = None,
     ) -> list[float]:
         """Return drug amount derivatives at time ``t``.
 
@@ -68,6 +71,9 @@ class Model:
         For each peripheral i, exchange_i = Q_i * (q_c / V_c - q_i / V_i).
         Then dq_c/dt = Dose(t) - CL * q_c / V_c - sum(exchange_i), and
         dq_i/dt = exchange_i.
+
+        When ``clear`` is provided, its linear clearance replaces the clearance
+        value in ``params`` for this rate calculation.
 
         Negative states are allowed because numerical solvers may briefly
         step below zero; states are never clipped within the equations.
@@ -83,7 +89,12 @@ class Model:
 
         p = self.params
         central_concentration = y[0] / p.central_volume
-        central_rate = input_rate - p.clearance * central_concentration
+        elimination_rate = (
+            clear.linear(central_concentration)
+            if clear is not None
+            else p.clearance * central_concentration
+        )
+        central_rate = input_rate - elimination_rate
         peripheral_rates = []
 
         for peripheral, amount in zip(p.peripherals, y[1:], strict=True):
