@@ -48,6 +48,9 @@ class Protocol:
         self.t = self.solution.t
         self.y = self.solution.y
 
+        self.fig, self.ax = self.plot()
+        plt.show()
+
     def compartment_eq(self, Qp, qc, vc, qp, vp):
         """
         Calculate the rate of change of drug quantity in a compartment p.
