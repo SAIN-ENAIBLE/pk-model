@@ -40,24 +40,24 @@ simulation = Simulation(
 solution = simulation.solve(t_end=24.0)
 ```
 
-SC doses enter the injection-site compartment (amount `q_0`) and absorb into
+SC doses enter the injection-site compartment (amount `depot`) and absorb into
 the central compartment with complete bioavailability. Solution rows contain
-central, peripheral, then `q_0` amounts, identified by `solution.q_0_index`.
+central, peripheral, then `depot` amounts, identified by `solution.depot_index`.
 For one peripheral, the equations are:
 
 ```text
-dq_0/dt = Dose(t) - Ka*q_0
-dqc/dt  = Ka*q_0 - CL*qc/Vc - Qp1*(qc/Vc - qp1/Vp1)
-dqp1/dt = Qp1*(qc/Vc - qp1/Vp1)
+d(depot)/dt = Dose(t) - Ka*depot
+dqc/dt      = Ka*depot - CL*qc/Vc - Qp1*(qc/Vc - qp1/Vp1)
+dqp1/dt     = Qp1*(qc/Vc - qp1/Vp1)
 ```
 
 `Model.rhs(..., protocol="SC", Ka=0.5)` implements these equations, extending
 the exchange terms to every configured peripheral. States are ordered
-`[qc, qp1, ..., q_0]`.
-Use `protocol="IV"` (the default) for direct central input without `q_0`.
+`[qc, qp1, ..., depot]`.
+Use `protocol="IV"` (the default) for direct central input without `depot`.
 `rhs_sc()` remains a compatibility wrapper around the SC option in `rhs()`.
 `Ka` is in 1/h when time is in hours; `Dose(t)` is an amount per hour.
-Bolus events add their amounts to `q_0` at the administration times, with zero
+Bolus events add their amounts to `depot` at the administration times, with zero
 input rate between events by default. An optional `dose_rate` supplies the
 continuous `Dose(t)` term, as a constant or a function of time:
 

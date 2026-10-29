@@ -13,7 +13,7 @@ from .model import Model
 
 @dataclass(frozen=True)
 class SimulationSolution:
-    """Amounts ordered central, peripherals, then q_0 for SC solutions."""
+    """Amounts ordered central, peripherals, then depot for SC solutions."""
 
     t: np.ndarray
     y: np.ndarray
@@ -21,7 +21,7 @@ class SimulationSolution:
     message: str = (
         "The solver successfully reached the end of the integration interval."
     )
-    q_0_index: int | None = None
+    depot_index: int | None = None
 
 
 def solve_regimen(
@@ -34,15 +34,15 @@ def solve_regimen(
     Ka: float | None = None,
     dose_rate: float | Callable[[float], float] = 0.0,
 ) -> SimulationSolution:
-    """Apply IV boluses to central or SC boluses to injection-site amount q_0.
+    """Apply IV boluses to central or SC boluses to the injection-site depot.
 
     ``Ka`` has inverse-time units. SC assumes complete bioavailability.
     ``dose_rate`` supplies an additional constant or callable input rate:
-    into central for IV, into q_0 for SC. Boluses remain discrete jumps.
+    into central for IV, into depot for SC. Boluses remain discrete jumps.
     """
     route = model.validate_route(protocol, Ka)
-    has_q_0 = route == "SC"
-    dose_index = model.n_compartments() if has_q_0 else 0
+    has_depot = route == "SC"
+    dose_index = model.n_compartments() if has_depot else 0
 
     def rhs(t, y):
         return model.rhs(t, y, dose_rate=dose_rate, clear=clear, protocol=route, Ka=Ka)
@@ -74,7 +74,7 @@ def solve_regimen(
     )
     boundaries = sorted({end, *dose_totals.keys()})
 
-    state = np.zeros(model.n_compartments() + has_q_0, dtype=float)
+    state = np.zeros(model.n_compartments() + has_depot, dtype=float)
     state[dose_index] += dose_totals.get(start, 0.0)
     result_times = [start]
     result_states = [state.copy()]
@@ -111,7 +111,7 @@ def solve_regimen(
     return SimulationSolution(
         t=np.asarray(result_times),
         y=np.asarray(result_states, dtype=float).T,
-        q_0_index=dose_index if has_q_0 else None,
+        depot_index=dose_index if has_depot else None,
     )
 
 

@@ -46,7 +46,7 @@ class Simulation:
     ) -> SimulationSolution:
         """Apply boluses and an optional Dose(t) input rate over the time span.
 
-        ``dose_rate`` enters central for IV and injection-site amount q_0 for SC.
+        ``dose_rate`` enters central for IV and injection-site amount depot for SC.
         Use consistent amount/time units; the default rate is zero.
         """
         self.solution = solve_regimen(

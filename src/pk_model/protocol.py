@@ -117,11 +117,11 @@ class Protocol:
                 [dqc] + dqp_list
             )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ...)
 
-        q0 = y[-1]  # the absorption
+        depot = y[-1]  # amount remaining at the injection site
         depot_input = dose if callable(self.dose) else 0.0
-        dq0 = depot_input - self.Ka * q0
-        absorption = self.Ka * q0
+        d_depot = depot_input - self.Ka * depot
+        absorption = self.Ka * depot
         dqc = self.central_eq(absorption, qc, vc, cl)
         return (
-            [dqc] + dqp_list + [dq0]
-        )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ..., dq0/dt)
+            [dqc] + dqp_list + [d_depot]
+        )  # return the rate of change of drug quantity in the system (dqc/dt, dq1/dt, dq2/dt, ..., d_depot/dt)

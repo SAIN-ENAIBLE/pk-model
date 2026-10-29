@@ -69,12 +69,12 @@ def test_sc_repeated_boluses_match_analytical_absorption(Ka):
     solution = simulation.solve(10.0, t_eval=[0.0, 2.0, 5.0, 10.0])
 
     central = np.zeros_like(solution.t)
-    q_0 = np.zeros_like(solution.t)
+    depot = np.zeros_like(solution.t)
     for dose in doses:
         elapsed = solution.t - dose.t
         active = elapsed >= 0
         dt = elapsed[active]
-        q_0[active] += dose.amount * np.exp(-Ka * dt)
+        depot[active] += dose.amount * np.exp(-Ka * dt)
         if Ka == 0.2:
             central[active] += dose.amount * Ka * dt * np.exp(-Ka * dt)
         else:
@@ -82,10 +82,10 @@ def test_sc_repeated_boluses_match_analytical_absorption(Ka):
                 dose.amount * Ka / (Ka - 0.2) * (np.exp(-0.2 * dt) - np.exp(-Ka * dt))
             )
 
-    np.testing.assert_allclose(solution.y, [central, q_0], rtol=1e-7, atol=1e-9)
-    assert solution.q_0_index == 1
+    np.testing.assert_allclose(solution.y, [central, depot], rtol=1e-7, atol=1e-9)
+    assert solution.depot_index == 1
     _, axes = simulation.plot()
-    assert [line.get_label() for line in axes.lines] == ["Central", "q_0"]
+    assert [line.get_label() for line in axes.lines] == ["Central", "depot"]
 
 
 @pytest.mark.parametrize("route", ["IM", "ID", "intramuscular", "intradermal"])

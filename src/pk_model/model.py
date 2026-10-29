@@ -38,7 +38,7 @@ class Model:
     """Linear compartment model with elimination from the central compartment.
 
     States are drug amounts, ordered central first, then peripherals in the
-    order given by ``params.peripherals``, then q_0 for SC administration.
+    order given by ``params.peripherals``, then depot for SC administration.
     ``params.clearance`` is the central
     clearance; each peripheral clearance is its intercompartmental clearance.
     Each peripheral exchanges drug only with the central compartment.
@@ -51,7 +51,7 @@ class Model:
         self.params = params
 
     def n_compartments(self) -> int:
-        """Return the number of central and peripheral compartments, excluding q_0."""
+        """Return the number of central and peripheral compartments, excluding depot."""
         return 1 + len(self.params.peripherals)
 
     @staticmethod
@@ -87,11 +87,11 @@ class Model:
         """Return amount derivatives for IV or SC administration.
 
         IV states: ``[q_c, q_p1, ..., q_pN]``.
-        SC states: ``[q_c, q_p1, ..., q_pN, q_0]``.
+        SC states: ``[q_c, q_p1, ..., q_pN, depot]``.
 
         ``dose_rate`` is Dose(t), a constant or callable input in amount/time.
-        It enters central for IV and q_0 for SC. SC absorption transfers
-        Ka*q_0 to central, with dq_0/dt = Dose(t) - Ka*q_0. ``Ka`` is a
+        It enters central for IV and depot for SC. SC absorption transfers
+        Ka*depot to central, with d(depot)/dt = Dose(t) - Ka*depot. ``Ka`` is a
         positive absorption rate in inverse-time units.
 
         Each peripheral receives Q_i*(q_c/V_c - q_pi/V_pi). Central loses
@@ -124,14 +124,14 @@ class Model:
             if clear is not None
             else p.clearance * central_concentration
         )
-        dq_0 = 0.0
+        d_depot = 0.0
         if is_sc:
-            q_0 = y[-1]
+            depot = y[-1]
             if Ka is None or not isfinite(Ka) or Ka <= 0:
                 raise ValueError("SC requires a positive finite absorption rate Ka.")
-            absorption = Ka * q_0
+            absorption = Ka * depot
             central_input = absorption
-            dq_0 = input_rate - absorption
+            d_depot = input_rate - absorption
         else:
             central_input = input_rate
 
@@ -147,5 +147,5 @@ class Model:
 
         rates = [central_rate, *peripheral_rates]
         if is_sc:
-            rates.append(dq_0)
+            rates.append(d_depot)
         return rates
