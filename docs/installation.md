@@ -6,3 +6,4 @@ Install `pk-model` using pip:
 
 ```bash
 pip install pk-model
+```

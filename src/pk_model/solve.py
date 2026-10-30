@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import isfinite
 
 import numpy as np
@@ -13,7 +13,11 @@ from .model import Model
 
 @dataclass(frozen=True)
 class SimulationSolution:
-    """Amounts ordered central, peripherals, then depot for SC solutions."""
+    """Amounts ordered central, peripherals, then depot for SC solutions.
+
+    ``y`` contains post-dose amounts at bolus times. ``pre_dose_states``
+    retains the amounts immediately before each bolus for plotting jumps.
+    """
 
     t: np.ndarray
     y: np.ndarray
@@ -22,6 +26,7 @@ class SimulationSolution:
         "The solver successfully reached the end of the integration interval."
     )
     depot_index: int | None = None
+    pre_dose_states: dict[float, np.ndarray] = field(default_factory=dict)
 
 
 def solve_regimen(
@@ -75,6 +80,9 @@ def solve_regimen(
     boundaries = sorted({end, *dose_totals.keys()})
 
     state = np.zeros(model.n_compartments() + has_depot, dtype=float)
+    pre_dose_states = {}
+    if start in dose_totals:
+        pre_dose_states[start] = state.copy()
     state[dose_index] += dose_totals.get(start, 0.0)
     result_times = [start]
     result_states = [state.copy()]
@@ -99,10 +107,20 @@ def solve_regimen(
 
         if not solution.success:
             raise RuntimeError(f"ODE solver failed: {solution.message}")
+        if len(solution.t) == 0 or solution.t[-1] != boundary:
+            raise RuntimeError(
+                f"ODE solver did not return the integration endpoint {boundary}."
+            )
+        if not np.all(np.isfinite(solution.y)):
+            raise RuntimeError("ODE solver returned non-finite compartment amounts.")
 
         result_times.extend(solution.t[:-1].tolist())
         result_states.extend(solution.y[:, :-1].T.tolist())
-        state = solution.y[:, -1]
+        # Keep the integrated pre-dose result intact; restart from a separate
+        # state containing the instantaneous jump.
+        state = solution.y[:, -1].copy()
+        if boundary in dose_totals:
+            pre_dose_states[boundary] = state.copy()
         state[dose_index] += dose_totals.get(boundary, 0.0)
         result_times.append(boundary)
         result_states.append(state.copy())
@@ -112,6 +130,7 @@ def solve_regimen(
         t=np.asarray(result_times),
         y=np.asarray(result_states, dtype=float).T,
         depot_index=dose_index if has_depot else None,
+        pre_dose_states=pre_dose_states,
     )
 
 

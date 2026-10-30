@@ -5,7 +5,7 @@ from numpy.typing import ArrayLike
 from .clear import Clear
 from .dose import Dose
 from .model import Model
-from .plotting import plot_solution
+from .plotting import plot
 from .solve import SimulationSolution, solve_regimen
 
 
@@ -65,4 +65,4 @@ class Simulation:
         """Return a Matplotlib figure and axes for the solved regimen."""
         if self.solution is None:
             raise RuntimeError("Call solve() before plot().")
-        return plot_solution(self.solution)
+        return plot(self.solution)
