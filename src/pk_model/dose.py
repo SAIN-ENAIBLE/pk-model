@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from ._validate import require_non_negative, require_positive
 
-def infusion(start, end, rate) -> Callable[[float],float]:
+def infusion(start: float, end: float, rate:float) -> Callable[[float],float]:
     """
     Returns continuous infusion dose function which outputs rate within the interval, otherwise 0.
 
@@ -35,6 +35,9 @@ def bolus(amount: float, time: float) -> Callable[[float],float]:
     Returns:
         Callable[[float],float]: Instantaenous bolus function.
     """
+    #TODO(Critical-Limitation): ivp_solver will likely step over instant t==t when t≠0.
+    #FIX 1: Report discontinuties and integrate segment-by-segments in Model.solve()
+    #FIX 2: Make functions continuous and non-instantaneous (more realistic), place param restrictions.
     
     def dose(t) -> float:
         require_non_negative("time",t)

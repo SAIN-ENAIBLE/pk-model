@@ -1,38 +1,47 @@
-"""
-Thoughts:
-- Rather than multiple assertion lines e.g test_infusion_range, use pyest.mark.parametrise
-
-
-"""
-
-from pk_model import dose
 import pytest
 
-def test_infusion_range():
-    
-    infusion_dose = dose.infusion(start=0,
-                                  end=30,
-                                  rate=15)
-    
-    assert infusion_dose(t=0) == 15
-    assert infusion_dose(t=15.074) == 15
-    assert infusion_dose(t=30.004) == 0
+from pk_model import dose
 
-@pytest.mark.parametrize(argnames="time, expected_conc",
-                         argvalues=[(0, 0),(15.074,0),(42,42)])
-def test_bolus_spike(time,expected_conc):
+
+@pytest.fixture
+def infusion_dose():
+    return dose.infusion(start=0,
+                         end=30,
+                         rate=15)
+
+@pytest.mark.parametrize(
+    argnames="t, expected_rate",
+    argvalues=
+    [
+        pytest.param(0,15, id="start-inclusive"),
+        pytest.param(29.999, 15, id="just-before-end"),
+        pytest.param(30,0, id="end-exclusive"),
+    ],
+)
+def test_infusion_range(infusion_dose, t, expected_rate):
+    assert infusion_dose(t) == expected_rate
+
+def test_negative_time(infusion_dose):    
+    with pytest.raises(ValueError):
+        infusion_dose(t=-2)
+
+@pytest.mark.parametrize(
+    argnames="time, expected_amount",
+    argvalues=
+    [
+        pytest.param(0.0,0, id="start"),
+        pytest.param(41.999,0.0, id="just-before"),
+        pytest.param(42.0, 42.0, id="instant-bolus-time"),
+        pytest.param(42.001,0.0, id="just-after")
+    ]
+    
+)
+def test_bolus_spike(time,expected_amount):
     
     instant_bolus = dose.bolus(amount=42,
                                time=42)
-    assert instant_bolus(t=time) == pytest.approx(expected_conc)
+    assert instant_bolus(t=time) == pytest.approx(expected_amount)
 
 
-def test_negative_timestep():
-    
-    infusion_dose = dose.infusion(start=0,
-                                  end=30,
-                                  rate=15)
-    
-    with pytest.raises(ValueError):
-        infusion_dose(t=-2)
+
             
