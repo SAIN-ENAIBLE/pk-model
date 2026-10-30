@@ -4,6 +4,9 @@
 :maxdepth: 2
 :hidden:
 
+installation
+usage
+models
 api
 ```
 
