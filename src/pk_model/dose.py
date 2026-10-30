@@ -10,9 +10,6 @@ def infusion(start, end, rate) -> Callable[[float],float]:
         end (_type_): Dose end time (exclusive).
         rate (_type_): Dose rate in [ng][h-1].
 
-    Raises:
-        ValueError: Input time must be positive.
-
     Returns:
         Callable[[float],float]: Infusion dose function.
     """

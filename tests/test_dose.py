@@ -34,5 +34,5 @@ def test_negative_timestep():
                                   rate=15)
     
     with pytest.raises(ValueError):
-            infusion_dose(t=-2)
+        infusion_dose(t=-2)
             
