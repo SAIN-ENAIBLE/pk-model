@@ -378,3 +378,54 @@ def test_invalid_segment_result_is_rejected_before_applying_bolus(
         solve_regimen(
             make_model(), [Dose.bolus(100.0, 2.34567)], make_clearance(), (0.0, 10.0)
         )
+
+
+# ---------------------------------------------------------------------
+# Initial compartment amounts
+# Check initial amounts coexist with boluses and are never modified in place.
+# ---------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("route", ["IV", "SC"])
+def test_initial_state_and_boluses_conserve_mass_without_clearance(route):
+    model = Model(CentralParams(5.0, 0.0, (PeripheralParams(10.0, 2.0),)))
+    initial = np.array([50.0, 20.0, 30.0] if route == "SC" else [50.0, 20.0])
+    original = initial.copy()
+    initial.setflags(write=False)
+    solution = solve_regimen(
+        model,
+        [Dose.bolus(10.0, 2.0), Dose.bolus(15.0, 6.0)],
+        Clear(0.0),
+        (2.0, 10.0),
+        t_eval=[2.0, 4.0, 8.0, 10.0],
+        protocol=route,
+        Ka=0.5 if route == "SC" else None,
+        initial_state=initial,
+    )
+    expected_total = initial.sum() + 10.0 + 15.0 * (solution.t >= 6.0)
+    np.testing.assert_allclose(solution.y.sum(axis=0), expected_total, atol=1e-9)
+    np.testing.assert_array_equal(initial, original)
+    np.testing.assert_array_equal(solution.pre_dose_states[2.0], original)
+
+
+@pytest.mark.parametrize(
+    "initial", [[], [1.0, 2.0], [[1.0]], [np.inf], [np.nan], [-1.0], 1.0]
+)
+def test_invalid_initial_states_are_rejected(initial):
+    with pytest.raises(ValueError, match="initial_state"):
+        solve_regimen(
+            make_model(), [], make_clearance(), (0.0, 10.0), initial_state=initial
+        )
+
+
+def test_sc_initial_state_requires_the_depot_amount():
+    with pytest.raises(ValueError, match="initial_state must contain 2"):
+        solve_regimen(
+            make_model(),
+            [],
+            make_clearance(),
+            (0.0, 10.0),
+            protocol="SC",
+            Ka=0.5,
+            initial_state=[100.0],
+        )

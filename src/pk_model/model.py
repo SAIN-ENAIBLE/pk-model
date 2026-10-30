@@ -21,7 +21,7 @@ class PeripheralParams:
 
 @dataclass(frozen=True)
 class CentralParams:
-    """Central parameters for the model."""
+    """Central parameters for the model; zero clearance disables elimination."""
 
     central_volume: float
     clearance: float
@@ -30,8 +30,8 @@ class CentralParams:
     def __post_init__(self):
         if not isfinite(self.central_volume) or self.central_volume <= 0:
             raise ValueError("Central volume must be a positive finite number.")
-        if not isfinite(self.clearance) or self.clearance <= 0:
-            raise ValueError("Clearance must be a positive finite number.")
+        if not isfinite(self.clearance) or self.clearance < 0:
+            raise ValueError("Clearance must be a non-negative finite number.")
 
 
 class Model:

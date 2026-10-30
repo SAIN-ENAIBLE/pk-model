@@ -43,11 +43,15 @@ class Simulation:
         t_start: float = 0.0,
         t_eval: ArrayLike | None = None,
         dose_rate: float | Callable[[float], float] = 0.0,
+        *,
+        initial_state: ArrayLike | None = None,
     ) -> SimulationSolution:
         """Apply boluses and an optional Dose(t) input rate over the time span.
 
         ``dose_rate`` enters central for IV and injection-site amount depot for SC.
         Use consistent amount/time units; the default rate is zero.
+        ``initial_state`` optionally supplies central, peripheral, and SC depot
+        amounts before the first dose. By default all compartments start empty.
         """
         self.solution = solve_regimen(
             model=self.model,
@@ -58,6 +62,7 @@ class Simulation:
             protocol=self.protocol,
             Ka=self.Ka,
             dose_rate=dose_rate,
+            initial_state=initial_state,
         )
         return self.solution
 

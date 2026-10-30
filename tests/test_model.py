@@ -64,6 +64,11 @@ def test_valid_central_params():
     assert params.peripherals == ()
 
 
+def test_zero_clearance_disables_elimination():
+    model = Model(CentralParams(central_volume=5.0, clearance=0.0))
+    assert model.rhs(0.0, [100.0]) == [0.0]
+
+
 @pytest.mark.parametrize("central_volume", [0.0, -1.0, np.inf, -np.inf, np.nan])
 def test_invalid_central_volume_raises_value_error(central_volume):
     """Central volume must be positive and finite."""
@@ -75,7 +80,7 @@ def test_invalid_central_volume_raises_value_error(central_volume):
         )
 
 
-@pytest.mark.parametrize("clearance", [0.0, -1.0, np.inf, -np.inf, np.nan])
+@pytest.mark.parametrize("clearance", [-1.0, np.inf, -np.inf, np.nan])
 def test_invalid_clearance_raises_value_error(clearance):
     """Central clearance must be positive and finite."""
 

@@ -38,12 +38,16 @@ def solve_regimen(
     protocol: str = "IV",
     Ka: float | None = None,
     dose_rate: float | Callable[[float], float] = 0.0,
+    *,
+    initial_state: ArrayLike | None = None,
 ) -> SimulationSolution:
     """Apply IV boluses to central or SC boluses to the injection-site depot.
 
     ``Ka`` has inverse-time units. SC assumes complete bioavailability.
     ``dose_rate`` supplies an additional constant or callable input rate:
     into central for IV, into depot for SC. Boluses remain discrete jumps.
+    ``initial_state`` sets amounts before any dose at the simulation start,
+    ordered central, peripherals, then depot for SC. The default is all zeros.
     """
     route = model.validate_route(protocol, Ka)
     has_depot = route == "SC"
@@ -79,7 +83,20 @@ def solve_regimen(
     )
     boundaries = sorted({end, *dose_totals.keys()})
 
-    state = np.zeros(model.n_compartments() + has_depot, dtype=float)
+    state_count = model.n_compartments() + has_depot
+    state = (
+        np.zeros(state_count, dtype=float)
+        if initial_state is None
+        else np.asarray(initial_state, dtype=float).copy()
+    )
+    if (
+        state.shape != (state_count,)
+        or not np.all(np.isfinite(state))
+        or np.any(state < 0)
+    ):
+        raise ValueError(
+            f"initial_state must contain {state_count} non-negative finite amounts."
+        )
     pre_dose_states = {}
     if start in dose_totals:
         pre_dose_states[start] = state.copy()
@@ -137,23 +154,3 @@ def solve_regimen(
 def _validate_time_span(t_start: float, t_end: float) -> None:
     if not isfinite(t_start) or not isfinite(t_end) or t_start >= t_end:
         raise ValueError("Time span must have finite start < end.")
-
-
-def solve_protocol(protocol, t_span, t_eval):
-    """Solve a Protocol's compartment equations over the requested time span."""
-    y0 = [protocol.central["qc"]] + protocol.qp_list
-
-    if protocol.type != "IV":
-        y0.append(0.0 if callable(protocol.dose) else protocol.dose)
-
-    return solve_ivp(
-        fun=protocol.system_eq,
-        t_span=t_span,
-        y0=y0,
-        t_eval=t_eval,
-        rtol=1e-9,
-        atol=1e-11,
-    )
-
-
-# Coverage incorrect due to the fact that solve_protocol is called in the Protocol constructor, which is not called in the tests. The tests call solve_regimen directly instead.

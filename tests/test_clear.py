@@ -9,7 +9,7 @@ from pk_model.clear import Clear
 
 # ---------------------------------------------------------------------
 # Clearance construction
-# Check that only positive finite clearance values are accepted.
+# Check that only non-negative finite clearance values are accepted.
 # ---------------------------------------------------------------------
 
 
@@ -21,12 +21,16 @@ def test_valid_clearance():
     assert clear.clearance == 2.0
 
 
+def test_zero_clearance_disables_elimination():
+    assert Clear(clearance=0.0).linear(100.0) == 0.0
+
+
 @pytest.mark.parametrize(
     "clearance",
-    [0.0, -1.0, np.inf, -np.inf, np.nan],
+    [-1.0, np.inf, -np.inf, np.nan],
 )
 def test_invalid_clearance_raises_value_error(clearance):
-    """Clearance must be positive and finite."""
+    """Clearance must be non-negative and finite."""
 
     with pytest.raises(ValueError):
         Clear(clearance=clearance)

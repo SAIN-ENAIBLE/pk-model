@@ -4,13 +4,13 @@ from math import isfinite
 
 @dataclass(frozen=True)
 class Clear:
-    """Linear elimination clearance from the central compartment."""
+    """Linear central clearance; a value of zero disables elimination."""
 
     clearance: float
 
     def __post_init__(self):
-        if not isfinite(self.clearance) or self.clearance <= 0:
-            raise ValueError("Clearance must be a positive finite number.")
+        if not isfinite(self.clearance) or self.clearance < 0:
+            raise ValueError("Clearance must be a non-negative finite number.")
 
     def linear(self, concentration: float) -> float:
         """Calculate the elimination rate using linear clearance."""

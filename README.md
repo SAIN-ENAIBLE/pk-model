@@ -71,8 +71,27 @@ This rate adds to any boluses in `regime`; use `regime=[]` for continuous input
 alone. For IV, `dose_rate` enters the central compartment directly.
 
 Full route names are also accepted, case-insensitively. Intramuscular (`"IM"`)
-and intradermal (`"ID"`) routes raise `NotImplementedError` in both `Simulation`
-and the older `Protocol` API.
+and intradermal (`"ID"`) routes raise `NotImplementedError` in `Model` and
+`Simulation`.
+
+## Model and solver interfaces
+
+Use `Model` for compartment parameters and equations, and `Simulation` to
+combine a model with a sequence of `Dose` events. `Simulation.solve()` calls
+the shared `solve_regimen()` implementation, which handles integration,
+bolus timing, and solution output. Boluses are supplied as `Dose` events;
+`dose_rate` supplies continuous input. `Dose.infusion()` remains unimplemented.
+
+Compartments start empty by default. To supply existing amounts, use
+`initial_state`, ordered central, peripherals, then depot for SC. For the
+SC model with one peripheral above:
+
+```python
+solution = simulation.solve(t_end=24.0, initial_state=[50.0, 20.0, 0.0])
+```
+
+Initial amounts must be finite and non-negative, and are applied before any
+bolus at the start time. Zero clearance is supported to disable elimination.
 
 ## Examples
 
