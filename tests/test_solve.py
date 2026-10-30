@@ -2,10 +2,12 @@
 
 import numpy as np
 import pytest
+from scipy.integrate import solve_ivp
+from scipy.linalg import expm
 
 from pk_model.clear import Clear
 from pk_model.dose import Dose
-from pk_model.model import CentralParams, Model
+from pk_model.model import CentralParams, Model, PeripheralParams
 from pk_model.solve import solve_regimen
 
 # Test helpers
@@ -267,3 +269,112 @@ def test_iv_solution_has_no_depot_index():
 
     assert solution.depot_index is None
     assert solution.success
+
+
+@pytest.mark.parametrize("protocol", ["IV", "SC"])
+@pytest.mark.parametrize("has_peripheral", [False, True])
+@pytest.mark.parametrize("dense_output_grid", [False, True])
+def test_boluses_between_output_times_stop_integration_and_match_exact_solution(
+    monkeypatch, protocol, has_peripheral, dense_output_grid
+):
+    """Doses must be applied exactly, independently of output sampling."""
+    segments = []
+
+    def record_segment(**kwargs):
+        result = solve_ivp(**kwargs)
+        segments.append((kwargs["t_span"], result, result.y.copy()))
+        return result
+
+    monkeypatch.setattr("pk_model.solve.solve_ivp", record_segment)
+    peripherals = (PeripheralParams(10.0, 2.0),) if has_peripheral else ()
+    model = Model(CentralParams(5.0, 1.0, peripherals))
+    start, end = 1.0, 10.0
+    first, second = 2.34567, 7.12345
+    # Unsorted events, simultaneous doses, and doses at both endpoints.
+    doses = [
+        Dose.bolus(30.0, second),
+        Dose.bolus(100.0, start),
+        Dose.bolus(20.0, first),
+        Dose.bolus(5.0, first),
+        Dose.bolus(10.0, end),
+    ]
+    times = np.linspace(start, end, 101) if dense_output_grid else [start, end]
+    solution = solve_regimen(
+        model,
+        doses,
+        make_clearance(),
+        (start, end),
+        t_eval=times,
+        protocol=protocol,
+        Ka=0.5 if protocol == "SC" else None,
+    )
+
+    # Independent matrix-exponential solution, including every dose exactly once.
+    size = model.n_compartments() + (protocol == "SC")
+    matrix = np.zeros((size, size))
+    matrix[0, 0] = -0.2
+    if has_peripheral:
+        matrix[0, 0] -= 0.4
+        matrix[0, 1] = 0.2
+        matrix[1, 0] = 0.4
+        matrix[1, 1] = -0.2
+    dose_index = size - 1 if protocol == "SC" else 0
+    if protocol == "SC":
+        matrix[0, -1] = 0.5
+        matrix[-1, -1] = -0.5
+    expected = np.zeros_like(solution.y)
+    for dose in doses:
+        jump = np.zeros(size)
+        jump[dose_index] = dose.amount
+        for i, t in enumerate(solution.t):
+            if t >= dose.t:
+                expected[:, i] += expm(matrix * (t - dose.t)) @ jump
+
+    np.testing.assert_allclose(solution.y, expected, rtol=1e-7, atol=1e-8)
+    assert [span for span, _, _ in segments] == [
+        (start, first),
+        (first, second),
+        (second, end),
+    ]
+    np.testing.assert_array_equal(solution.t, np.unique([*times, first, second]))
+    assert set(solution.pre_dose_states) == {dose.t for dose in doses}
+    for t, pre_dose_state in solution.pre_dose_states.items():
+        expected_pre = np.zeros(size)
+        for dose in doses:
+            if dose.t < t:
+                jump = np.zeros(size)
+                jump[dose_index] = dose.amount
+                expected_pre += expm(matrix * (t - dose.t)) @ jump
+        np.testing.assert_allclose(pre_dose_state, expected_pre, rtol=1e-7, atol=1e-8)
+        expected_jump = np.zeros(size)
+        expected_jump[dose_index] = sum(dose.amount for dose in doses if dose.t == t)
+        post_dose_state = solution.y[:, np.searchsorted(solution.t, t)]
+        np.testing.assert_allclose(
+            post_dose_state - pre_dose_state, expected_jump, atol=1e-12
+        )
+    for (_, boundary), result, original_amounts in segments:
+        assert result.t[-1] == boundary
+        np.testing.assert_array_equal(result.y, original_amounts)
+
+
+@pytest.mark.parametrize("bad_result", ["missing_endpoint", "empty", "non_finite"])
+def test_invalid_segment_result_is_rejected_before_applying_bolus(
+    monkeypatch, bad_result
+):
+    def invalid_segment(**kwargs):
+        result = solve_ivp(**kwargs)
+        if bad_result == "missing_endpoint":
+            result.t[-1] = np.nextafter(kwargs["t_span"][1], -np.inf)
+        elif bad_result == "empty":
+            result.t = result.t[:0]
+            result.y = result.y[:, :0]
+        else:
+            result.y[0, -1] = np.nan
+        return result
+
+    monkeypatch.setattr("pk_model.solve.solve_ivp", invalid_segment)
+    message = "non-finite" if bad_result == "non_finite" else "integration endpoint"
+    with pytest.raises(RuntimeError, match=message):
+        solve_regimen(
+            make_model(), [Dose.bolus(100.0, 2.34567)], make_clearance(), (0.0, 10.0)
+        )

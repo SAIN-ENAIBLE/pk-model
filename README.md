@@ -10,7 +10,7 @@ model, define a dosing protocol, solve, and plot.
 ## Installation
 
 ```bash
-pip install .
+pip install pk-model
 ```
 
 ## Administration routes
@@ -43,6 +43,9 @@ solution = simulation.solve(t_end=24.0)
 SC doses enter the injection-site compartment (amount `depot`) and absorb into
 the central compartment with complete bioavailability. Solution rows contain
 central, peripheral, then `depot` amounts, identified by `solution.depot_index`.
+At injection times, `solution.y` contains post-dose amounts. Pre-dose amounts
+are retained in `solution.pre_dose_states`, allowing plots to show vertical
+bolus jumps while keeping `solution.t` strictly increasing.
 For one peripheral, the equations are:
 
 ```text
@@ -70,6 +73,19 @@ alone. For IV, `dose_rate` enters the central compartment directly.
 Full route names are also accepted, case-insensitively. Intramuscular (`"IM"`)
 and intradermal (`"ID"`) routes raise `NotImplementedError` in both `Simulation`
 and the older `Protocol` API.
+
+## Examples
+
+Run the example scripts from the repository root:
+
+```bash
+uv run python scripts/example.py   # One peripheral: compare IV and SC
+uv run python scripts/2_periph.py  # Two peripherals: repeated IV doses
+uv run python scripts/3_periph.py  # Compare two and three peripherals with the same IV regimen
+```
+
+Each model also has a central compartment; SC adds an absorption depot.
+The scripts print final amounts and display comparison plots.
 
 ## Development
 

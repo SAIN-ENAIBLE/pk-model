@@ -1,28 +1,10 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot(solution):
-    """Plot drug quantity against time for each compartment."""
-
-    fig, ax = plt.subplots(figsize=(9, 5))
-
-    for i, label in enumerate(solution.y):
-        label_name = "Central" if i == 0 else f"Peripheral {i}"
-        ax.plot(solution.t, label, label=label_name)
-
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Drug quantity (ng)")
-    ax.set_title("Drug quantity over time")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-
-    fig.tight_layout()
-    return fig, ax
-
-
-def plot_solution(sol):
     """Plot one solution's compartment amounts, assuming hours and ng."""
-    return plot_solutions([sol])
+    return plot_solutions([solution])
 
 
 def plot_solutions(solutions, labels=None):
@@ -30,6 +12,7 @@ def plot_solutions(solutions, labels=None):
 
     Each solution uses its own time points and may have a different number of
     compartments. Optional labels identify the solutions in the legend.
+    Retained pre-dose states draw instantaneous bolus jumps at injection times.
     """
     solutions = list(solutions)
     if not solutions:
@@ -47,12 +30,25 @@ def plot_solutions(solutions, labels=None):
     fig, ax = plt.subplots(figsize=(9, 5))
 
     for sol, label in zip(solutions, labels, strict=True):
-        for i, amounts in enumerate(sol.y):
+        times, states = sol.t, sol.y
+        pre_dose_states = getattr(sol, "pre_dose_states", {})
+        if pre_dose_states:
+            plot_times, plot_states = [], []
+            for t, state in zip(sol.t, sol.y.T, strict=True):
+                if t in pre_dose_states:
+                    plot_times.append(t)
+                    plot_states.append(pre_dose_states[t])
+                plot_times.append(t)
+                plot_states.append(state)
+            times = np.asarray(plot_times)
+            states = np.asarray(plot_states).T
+
+        for i, amounts in enumerate(states):
             compartment = "Central" if i == 0 else f"Peripheral {i}"
             if i == getattr(sol, "depot_index", None):
                 compartment = "depot"
             name = f"{label}: {compartment}" if label else compartment
-            ax.plot(sol.t, amounts, label=name)
+            ax.plot(times, amounts, label=name)
 
     ax.set_xlabel("Time (hours)")
     ax.set_ylabel("Drug amount (ng)")
